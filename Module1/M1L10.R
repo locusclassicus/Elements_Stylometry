@@ -1,21 +1,33 @@
-library(stylo)
-## method one
-my_text<- load.corpus.and.parse(files = "Xenophon_Hell.txt", corpus.dir = getwd(), 
-                                markup.type= "plain", 
-                                corpus.lang = "Other", 
-                                splitting.rule = NULL,
-                                sample.size = 1000, 
-                                sampling = "normal.sampling",
-                                sample.overlap = 0, 
-                                sampling.with.replacement = FALSE, 
-                                features = "w", 
-                                ngram.size = 1, 
-                                preserve.case = FALSE,
-                                encoding = "UTF-8")
+## write a function to parse files in Diorisis archive
 
-## method two (if your text is already loaded)
-make.samples(tokenized.text, sample.size = 10000, 
-             sampling = "no.sampling", sample.overlap = 0,
-             number.of.samples = 1, sampling.with.replacement = FALSE)
+xml_to_txt <- function(x) {
+  ## extract files 
+  diorisis_list <- unzip("Diorisis.zip", files = NULL, list = TRUE) 
+  new_list <- grep(x, diorisis_list$Name, ignore.case=TRUE, value=TRUE) 
+  unzip("Diorisis.zip", files = new_list)
+}
 
-## drop samples
+## let's source it and try x = 0086 (Aristotle)
+## add new commands
+
+xml_to_txt <- function(x) {
+  ## extract files 
+  diorisis_list <- unzip("Diorisis.zip", files = NULL, list = TRUE) 
+  new_list <- grep(x, diorisis_list$Name, ignore.case=TRUE, value=TRUE) 
+  unzip("Diorisis.zip", files = new_list)
+  ## remove spaces
+  library(filesstrings)
+  remove_filename_spaces(".")
+  ## parse
+  filenames <- list.files(pattern = ".xml")
+  for (i in filenames){
+    url = paste("./", i, sep = "")
+    doc <- xmlTreeParse(url, useInternalNodes = TRUE, isURL = F)
+    rootnode  <- xmlRoot(doc)
+    text <- xpathSApply(rootnode, "//TEI.2/text/body/sentence/word/lemma", xmlGetAttr, 'entry')
+    text <- as.character(text)
+    y <-gsub(".xml","", i)
+    outname <-  paste(y, ".txt", sep= "") 
+    write.table(text, outname, row.names = FALSE, col.names = FALSE, quote = FALSE)
+  }
+}
