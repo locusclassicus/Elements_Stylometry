@@ -31,12 +31,14 @@ words <- BG %>%
   unnest_tokens(word, text)
 
 words <- words[-c(1:18), ]
-
+save(words, file = "./data/Caesar.Rdata")
 ## count
 book_words <- words %>% count(word, sort = TRUE)
 total_words <- sum(book_words$n)
+save
 
 ## if you need a character vector
 BG.str <- words$word
+write.table(BG.str, file = "BG.txt", quote = F, row.names = F, col.names = F)
 
 

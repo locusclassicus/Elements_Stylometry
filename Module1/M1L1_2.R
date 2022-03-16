@@ -24,9 +24,9 @@ my_text <- load.corpus.and.parse(files = "CiceroOff.txt", corpus.dir = getwd(),
 my_text <- unlist(my_text, use.names = FALSE)
 
 ## save text 
-save(my_text, file = "CiceroOff.Rdata")
+save(my_text, file = "./Cicero/CiceroOff.Rdata")
 write.table(my_text, quote = FALSE, row.names = FALSE, 
-            col.names = FALSE, file = "CiceroOff.txt")
+            col.names = FALSE, file = "./Cicero/CiceroOff.txt")
 
 ## remove text
 rm(my_text)

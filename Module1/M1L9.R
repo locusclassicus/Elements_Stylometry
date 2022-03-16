@@ -33,11 +33,8 @@ for (i in filenames){
 }
 ## some lemmas are NULL, we might want to remove them later
 
-dir.create("Unicode")
+dir.create("Texts")
 files_unicode <- list.files(pattern = ".txt")
-file.copy(files_unicode, "Unicode")
+file.copy(files_unicode, "Texts")
 file.remove(files_unicode)
-
-## now let's write a function...
-
 

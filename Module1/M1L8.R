@@ -29,6 +29,6 @@ for (i in 1:length(books)) {
 }
 
 ## check 
-b13 <- df[df$b.nr == "13", ]
+ 
 
 
