@@ -34,8 +34,6 @@ rm(my_text)
 ## load text
 load("CiceroOff.Rdata")
 
-## remove text
-rm(my_text)
 
 ## read text
 my_text <- unlist((load.corpus.and.parse(files = "CiceroOff.txt", corpus.dir = getwd(), 
