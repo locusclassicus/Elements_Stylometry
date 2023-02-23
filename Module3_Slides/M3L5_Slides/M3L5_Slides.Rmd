@@ -1,0 +1,180 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Проверка гипотезы"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+# Статистический вывод
+
+- Статистический вывод (англ. statistical inference), также называемый индуктивной статистикой (англ. inferential statistics, inductive statistics) — обобщение информации из выборки для получения представления о свойствах генеральной совокупности. 
+
+- Статистический вывод отличается от описательной статистики, которая занимается только описанием и анализом имеющихся данных и не делает выводов о том, как результаты её анализа могут быть перенесены на генеральную совокупность. 
+
+.footnote[
+[Источник: Wikipedia.org](https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%B0%D1%82%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B2%D1%8B%D0%B2%D0%BE%D0%B4)
+]
+
+---
+# Проверка гипотезы
+
+.pull-left[
+
+- **Формулировка нулевой и альтернативной гипотезы**
+
+- Выбор уровня значимости
+
+- Определение подходящего статистического критерия
+
+- Принятие решения на основании данных выборки </br>
+]
+
+.pull-right[
+$H_0: μ_R = μ_L$ </br>
+$H_1: μ_R \neq μ_L$
+]
+
+---
+# Типы ошибок  
+
+<img src="https://www.questionstar.ru/wp-content/uploads/2020/08/%D0%BE%D1%82%D0%B2%D0%B5%D1%80%D0%B3%D0%BD%D1%83%D1%82%D0%B0.png" />
+
+.footnote[Источник: [Questionstar.ru](https://www.questionstar.ru/uchebnik-kak-provodit-oprosy/analiz-dannix-statisticheskie-metodi/induktivnaya-statistika/proverka-statisticheskix-gipotez)]
+---
+
+# Z-тест (Z-критерий Фишера)
+
+.pull-left[
+## Z-оценка
+<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/5ceed701c4042bb34618535c9a902ca1a937a351" />
+
+## Z-статистика
+<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/4e4de9205e4a5a691bb66d7f3cab0ab7dd47d199" />
+
+]
+
+.pull-right[
+<img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Normal_distribution_and_scales.gif" /> 
+
+.footnote[
+[Источник: Wikipedia.org](https://ru.wikipedia.org/wiki/Z-%D0%BE%D1%86%D0%B5%D0%BD%D0%BA%D0%B0#/media/%D0%A4%D0%B0%D0%B9%D0%BB:Normal_distribution_and_scales.gif)
+]
+]
+
+
+
+
+
+
+
+---
+
+# $μ_R$ & $σ_R$  
+
+```{r}
+library(dplyr)
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/SentL.Rdata")
+Rep <- sent.length %>% filter(title == "Republic")
+mu <- mean(Rep$sent.l)
+sigma <- sd(Rep$sent.l)
+mu
+sigma
+```
+
+---
+# Z-статистика
+
+```{r}
+Laws <- sent.length %>% filter(title == "Laws")
+set.seed(123)
+Laws.sample <- sample(Laws$sent.l, 1000)
+xbar <- mean(Laws.sample)
+sem <- sigma /sqrt(1000)
+z <- (xbar - mu) / sem
+xbar
+sem
+z
+```
+
+---
+# "Государство" vs. "Законы"
+.pull-left[
+```{r}
+2*pnorm(q=z, lower.tail=FALSE)
+pnorm(q=z, lower.tail=T)
+pnorm(q=z, lower.tail=F)
+```
+]
+
+.pull-right[
+<img src="https://uploads-cdn.omnicalculator.com/images/pvalsym.png?width=850&enlarge=0&format=webp" style="width: 70%"  />
+]
+
+.footnote[
+Источник: [Omnicalculator.com](https://www.omnicalculator.com/statistics/p-value)
+]
+---
+
+# "Государство" vs. "Хармид"
+
+```{r}
+Chrm <- sent.length %>% filter(title == "Charmides")
+set.seed(123)
+Chrm.sample <- sample(Chrm$sent.l, 100)
+xbar <- mean(Chrm.sample)
+sem <- sigma /sqrt(100)
+z <- (xbar - mu) / sem
+z
+2*pnorm(q=z, lower.tail=T)
+```
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

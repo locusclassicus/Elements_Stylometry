@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L6_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Т-распределение и критерий Стьюдента
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+.pull-left[
+# Z-статистика 
+
+# `$$\frac{\bar{x}-\mu}{\sigma/\sqrt{n}}$$`
+
+]
+
+.pull-right[
+# T-статистика
+
+# `$$\frac{\bar{x}-\mu}{s/\sqrt{n}}$$`
+]
+---
+# Распределение Стьюдента
+
+.pull-left[
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/William_Sealy_Gosset.jpg/1024px-William_Sealy_Gosset.jpg" style="width: 70%" /&gt;
+]
+
+.pull-right[
+- Когда параметр популяции `\(\sigma\)` неизвестен, но известно стандартное отклонение s для выборки, то его можно использовать для оценки `\(\sigma\)`.
+
+- Cтандартную ошибку среднего популяции `\(\sigma/\sqrt{n}\)`  можно оценить с помощью стандартной ошибки среднего выборки `\(s/\sqrt{n}\)`
+
+]
+---
+# T-статистика
+
+.pull-left[
+# `$$\frac{\bar{x}-\mu}{s/\sqrt{n}}$$`
+]
+
+.pull-right[
+###  Каждое новое значение n приводит к новому t-распределению
+]
+---
+# Степени свободы
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-1-1.png" width="100%" /&gt;
+---
+# Артикль у Платона
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-2-1.png" width="100%" /&gt;
+---
+# Проверка на нормальность
+.pull-left[
+
+```r
+shapiro.test(section.words.pl$n)
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  section.words.pl$n
+## W = 0.97796, p-value &lt; 2.2e-16
+```
+]
+
+.pull-right[
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-4-1.png" width="100%" /&gt;
+]
+---
+#  Выборочные средние
+
+```r
+sample.count.pl &lt;- function(x) {
+  my_counts &lt;- c()
+  for (i in 1:x){
+  my_sample &lt;- Plato %&gt;% sample_n(100) %&gt;% filter(word %in% my_words) 
+  n &lt;- my_sample %&gt;% summarize(n = n())
+  my_counts &lt;- c(my_counts, as.numeric(n))
+  }
+  my_counts
+}
+
+set.seed(10)
+pl_means &lt;- c()
+for (i in 1:10) {
+m &lt;- mean(sample.count.pl(5))
+pl_means &lt;- c(pl_means, m)
+}
+```
+---
+# Проверка на нормальность 
+.pull-left[
+
+```r
+shapiro.test(pl_means)
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  pl_means
+## W = 0.92578, p-value = 0.4077
+```
+]
+
+.pull-right[
+
+```r
+ggqqplot(pl_means)
+```
+
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-7-1.png" width="100%" /&gt;
+]
+---
+#  T-статистика
+
+```r
+mu = mean(section.words.pl$n)
+mu
+```
+
+```
+## [1] 9.3788
+```
+
+```r
+xbar = mean(pl_means)
+xbar
+```
+
+```
+## [1] 9.3
+```
+
+```r
+s = sd(pl_means)
+s
+```
+
+```
+## [1] 1.544165
+```
+
+```r
+tstat = (xbar - mu) / (s / sqrt(10))
+tstat
+```
+
+```
+## [1] -0.1613747
+```
+---
+# P-значение
+
+```r
+2*(1-pt(abs(tstat), 9))
+```
+
+```
+## [1] 0.8753628
+```
+
+```r
+t.test(pl_means, mu= mu)
+```
+
+```
+## 
+## 	One Sample t-test
+## 
+## data:  pl_means
+## t = -0.16137, df = 9, p-value = 0.8754
+## alternative hypothesis: true mean is not equal to 9.3788
+## 95 percent confidence interval:
+##   8.195371 10.404629
+## sample estimates:
+## mean of x 
+##       9.3
+```
+---
+# Доверительный интервал
+
+## `$$CI_{1-α} = \bar{x}\pm\bigg({t_\frac{a}{2},_{df}}\bigg)\bigg(\frac{s}{\sqrt{n}}\bigg)$$`
+
+
+```r
+tstat &lt;- qt(0.025, 9) 
+tstat
+```
+
+```
+## [1] -2.262157
+```
+
+```r
+xbar + c(-1,1) * tstat * (s / sqrt(10))
+```
+
+```
+## [1] 10.404629  8.195371
+```
+---
+# T.test
+
+
+```r
+t.test(pl_means, mu=mu)
+```
+
+```
+## 
+## 	One Sample t-test
+## 
+## data:  pl_means
+## t = -0.16137, df = 9, p-value = 0.8754
+## alternative hypothesis: true mean is not equal to 9.3788
+## 95 percent confidence interval:
+##   8.195371 10.404629
+## sample estimates:
+## mean of x 
+##       9.3
+```
+---
+# Двухвыборочный t-критерий
+- бывает для зависимых и **независимых** выборок
+- генеральные совокупности имеют примерно нормальное распределение (или применима ТЦП)
+- их дисперсии  приблизительно равны
+---
+
+# Артикль у Аристотеля 
+
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-12-1.png" width="100%" /&gt;
+---
+# Проверка на нормальность 
+.pull-left[
+
+```r
+shapiro.test(section.words.ar$n)
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  section.words.ar$n
+## W = 0.99297, p-value = 3.182e-11
+```
+]
+
+.pull-right[
+
+```r
+ggqqplot(section.words.ar$n)
+```
+
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-14-1.png" width="100%" /&gt;
+]
+---
+# Выборочные средние
+
+
+```r
+sample.count.ar &lt;- function(x) {
+  my_counts &lt;- c()
+  for (i in 1:x){
+  my_sample &lt;- Aristotle.tidy %&gt;% sample_n(100) %&gt;% filter(word %in% my_words) 
+  n &lt;- my_sample %&gt;% summarize(n = n())
+  my_counts &lt;- c(my_counts, as.numeric(n))
+  }
+  my_counts
+}
+
+set.seed(10)
+ar_means &lt;- c()
+for (i in 1:10) {
+m &lt;- mean(sample.count.ar(5))
+ar_means &lt;- c(ar_means, m)
+}
+```
+---
+# Проверка на нормальность 
+.pull-left[
+
+```r
+shapiro.test(ar_means)
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  ar_means
+## W = 0.94908, p-value = 0.6576
+```
+]
+
+.pull-right[
+
+```r
+ggqqplot(ar_means)
+```
+
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-17-1.png" width="100%" /&gt;
+]
+---
+# Модификация Уэлча
+
+# $$ t = \frac{\bar{x_1}-\bar{x_2}}{\sqrt{\frac{s_1^2}{n_1}+\frac{s_2^2}{n_2}}} $$
+---
+# Двухвыборочный критерий
+
+
+```r
+ar_means
+```
+
+```
+##  [1] 15.2 15.4 16.4 15.2 17.6 15.0 16.0 16.8 15.2 14.0
+```
+
+```r
+pl_means
+```
+
+```
+##  [1]  9.2 12.0 10.4 10.2  9.2  7.0  9.2  9.0  6.8 10.0
+```
+
+```r
+num = mean(ar_means) - mean(pl_means)
+den = (((sd(ar_means))^2)/10) + (((sd(pl_means))^2)/10)
+t = num/ sqrt(den)
+t
+```
+
+```
+## [1] 10.85749
+```
+
+---
+# T.test
+
+```r
+t.test(ar_means, pl_means)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  ar_means and pl_means
+## t = 10.857, df = 15.717, p-value = 1.039e-08
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  5.132491 7.627509
+## sample estimates:
+## mean of x mean of y 
+##     15.68      9.30
+```
+---
+# Диаграмма размаха
+&lt;img src="M3L6_Slides_files/figure-html/unnamed-chunk-20-1.png" width="100%" /&gt;
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э. Визуализация данных с помощью ggplot2. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

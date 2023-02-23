@@ -1,0 +1,138 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "F-критерий Фишера"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+# F-критерий Фишера
+
+.pull-left[
+#$$H_0: \sigma_1^2 = \sigma_2^2$$
+#$$H_a: \sigma_1^2 \neq \sigma_2^2$$
+]
+
+.pull-right[
+
+#$$F = \frac{s_1^2}{s_2^2}$$
+
+]
+---
+# Уровень значимости
+```{r fig.height=3}
+library(sjPlot)
+dist_f(deg.f1 = 6, deg.f2 = 45, p= 0.05)
+```
+---
+# Семейство F-распределений
+```{r echo=F}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+data.frame(f = 0:1000 / 100) %>% 
+  mutate(df_10_20 = df(x = f, df1 = 10, df2 = 20),
+         df_05_10 = df(x = f, df1 = 5, df2 = 10), 
+        df_20_50 = df(x = f, df1 = 20, df2 = 50)) %>%
+  gather(key = "df", value = "density", -f) %>%
+  ggplot() +
+  geom_line(aes(x = f, y = density, color = df)) +
+  labs(title = "Семейство F-распределений",
+       x = "F",
+       y = "Плотность") 
+```
+---
+# Расчет статистики
+```{r}
+set.seed(12)
+x <- rnorm(10)
+y <- rnorm(12)
+var.test(x, y)
+```
+---
+# Расчет статистики
+```{r}
+set.seed(12)
+x <- rnorm(10, sd = 1)
+y <- rnorm(12, sd = 3)
+var.test(x, y)
+```
+---
+
+```{r}
+var.test(x, y)
+var(x)/var(y)
+```
+---
+```{r}
+statistic <- var(x)/var(y)
+pval <- pf(statistic, df1=9, df2=11)
+pval <- 2 * min(pval, 1 - pval)
+pval
+var.test(x, y)
+```
+---
+
+```{r}
+x <- rnorm(100); error = rnorm(100); y <- 2 * x + 3 + error
+my_lm <- lm(y ~ x)
+summary(my_lm)
+```
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

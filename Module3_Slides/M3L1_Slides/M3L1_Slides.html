@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L1_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Меры центральной тенденции <br/> Меры изменчивости
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+class: inverse center middle
+
+# Меры центральной тенденции
+## Мода, медиана, среднее
+
+---
+# Мода
+
+
+
+```r
+sent.length %&gt;% ggplot(aes(x = sent.l)) + geom_histogram(fill = "lightblue", binwidth = 5) +
+  labs(title = "Распределение длины предложений в Платоновском корпусе (Diorisis)")
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/plot-1.png" width="100%" /&gt;
+
+---
+# Наиболее частое значение
+
+```r
+sent.length %&gt;% count(sent.l, sort = TRUE)
+```
+
+```
+## # A tibble: 137 × 2
+##    sent.l     n
+##     &lt;dbl&gt; &lt;int&gt;
+##  1      2  3520
+##  2      1  2661
+##  3      3  2563
+##  4      4  1658
+##  5      6  1559
+##  6      7  1557
+##  7      5  1549
+##  8      8  1518
+##  9      9  1471
+## 10     10  1375
+## # … with 127 more rows
+```
+
+---
+# Бимодальное распределение
+.pull-left[
+![Bimodal distribution](https://miro.medium.com/max/1120/1*cxeqxH1_zb68td7toVvFQQ.png)
+
+.footnote[Источник: [Medium.com](https://medium.com/precarious-physicist/teaching-a-class-with-a-bimodal-distribution-if-you-have-one-c9629ac15469)
+]]
+---
+# Медиана
+
+```r
+sent.length %&gt;% ggplot(aes(x = sent.l)) + geom_histogram(fill = "lightblue", binwidth = 5) +
+  geom_vline(aes(xintercept=median(sent.l)), color = "purple")
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/unnamed-chunk-3-1.png" width="100%" /&gt;
+
+---
+# Диаграмма размаха
+
+```r
+my_dial &lt;- c("Sophist", "Timaeus")
+sent.length %&gt;% filter(title %in% my_dial) %&gt;% ggplot(aes(x = title, y = sent.l,                                                    fill = title)) + 
+  geom_boxplot(alpha = 0.3)
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/unnamed-chunk-4-1.png" width="100%" /&gt;
+---
+# Анатомия диаграммы размаха
+
+&lt;img src="https://miro.medium.com/max/1400/1*2c21SkzJMf3frPXPAR_gZA.png" style="width: 90%" /&gt;
+
+.pull-right[
+.footnote[Источник: [Towardsdatascience.com](https://towardsdatascience.com/understanding-boxplots-5e2df7bcbd51)
+]]
+---
+# Квантили 
+
+```r
+Tim &lt;- sent.length %&gt;% filter(title == "Timaeus") 
+median(Tim$sent.l) 
+```
+
+```
+## [1] 21
+```
+
+```r
+quantile(Tim$sent.l)
+```
+
+```
+##   0%  25%  50%  75% 100% 
+##    1   14   21   34  206
+```
+
+```r
+quantile(Tim$sent.l, seq(0, 1, 0.1))
+```
+
+```
+##   0%  10%  20%  30%  40%  50%  60%  70%  80%  90% 100% 
+##    1    8   12   15   18   21   25   30   38   52  206
+```
+
+```r
+IQR(Tim$sent.l)
+```
+
+```
+## [1] 20
+```
+
+---
+
+# Среднее
+
+```r
+sent.length %&gt;% ggplot(aes(x = sent.l)) + geom_histogram(fill = "lightblue", binwidth = 5) +
+  geom_vline(aes(xintercept=median(sent.l)), color = "purple") + 
+  geom_vline(aes(xintercept=mean(sent.l)), color = "magenta")
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/unnamed-chunk-6-1.png" width="100%" /&gt;
+
+---
+class: inverse center middle
+
+# Меры изменчивости
+## Размах, дисперсия, ст. отклонение
+
+---
+# Дисперсия
+
+```r
+sl &lt;- sent.length$sent.l
+var(sl)
+```
+
+```
+## [1] 221.8552
+```
+
+```r
+sum((sl - mean(sl))^2) / (length(sl)-1) 
+```
+
+```
+## [1] 221.8552
+```
+.pull-left[
+![Variance](https://miro.medium.com/max/716/1*51Bri-1mUHRWhKQx4m-RgQ.png)]
+
+.pull-right[
+.footnote[Источник: [Medium.com](https://medium.com/@mohan-gupta/understanding-variance-and-why-do-we-divide-by-n-1-58950c0953a4)
+]]
+
+---
+# Стандартное отклонение
+
+```r
+sqrt(var(sl))
+```
+
+```
+## [1] 14.89481
+```
+
+```r
+sd(sl) 
+```
+
+```
+## [1] 14.89481
+```
+---
+
+# От выборки к популяции 
+
+&lt;img src="https://www.researchgate.net/profile/Pranab-Chatterjee/publication/262377157/figure/tbl1/AS:614149746851876@1523436118934/Symbols-of-Population-Parameter-and-their-Corresponding-Sample-Statistic.png" style="width: 80%" /&gt;
+
+.footnote[Источник: [Researchgate.net](https://www.researchgate.net/figure/Symbols-of-Population-Parameter-and-their-Corresponding-Sample-Statistic_tbl1_262377157)
+]
+---
+
+# Оценка параметров популяции
+
+
+```r
+sample.means &lt;- function(x) {
+  my_means &lt;- c()
+  for(i in 1:x) {
+    my_sample &lt;- sent.length %&gt;% sample_n(2000, replace = TRUE)
+    my_mean &lt;- mean(my_sample$sent.l)
+    my_means &lt;- c(my_means, my_mean)
+  }
+  hist(my_means)
+  abline(v = mean(my_means), col = "red", lwd = 3)
+  abline(v = mean(sent.length$sent.l), col = "blue", lwd =3)
+}
+```
+
+---
+# Выборка = 10
+
+```r
+set.seed(1)
+sample.means(10)
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/unnamed-chunk-10-1.png" width="100%" /&gt;
+---
+
+# Выборка = 100
+
+```r
+set.seed(1)
+sample.means(100)
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/unnamed-chunk-11-1.png" width="100%" /&gt;
+---
+
+# Выборка = 1000
+
+```r
+set.seed(1)
+sample.means(1000)
+```
+
+&lt;img src="M3L1_Slides_files/figure-html/unnamed-chunk-12-1.png" width="100%" /&gt;
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

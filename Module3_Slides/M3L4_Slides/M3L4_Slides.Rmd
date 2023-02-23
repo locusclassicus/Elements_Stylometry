@@ -1,0 +1,243 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Доверительные интервалы"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+# Дисперсия выборочных средних и дисперсия популяции
+
+> Чем больше по объему выборка, тем меньше дисперсия выборочных средних. <br/>
+
+$$
+\sigma_x^2 = \sigma^2 / n,
+$$
+где 
+- $\sigma^2$ - это дисперсия популяции
+- $\sigma_x^2$ - дисперсия выборочных средних
+- n - объем выборки
+
+---
+# Длина предложений в Платоновском корпусе
+
+```{r echo=FALSE}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/SentL.Rdata")
+```
+.pull-left[
+```{r}
+mean(sent.length$sent.l)
+```
+]
+.pull-right[
+```{r}
+hist(sent.length$sent.l)
+```
+]
+
+---
+# Функция  
+
+```{r eval=FALSE}
+sample.means <- function(x, n) {
+  my_means <- c()
+  for(i in 1:x) {
+    my_sample <- sent.length %>% sample_n(n)
+    my_mean <- mean(my_sample$sent.l)
+    my_means <- c(my_means, my_mean)
+  }
+  my_var <- round(var(my_means), 2)
+  hist(my_means, xlab = paste0("sample size ", n), main = paste0("var = ", my_var))
+}
+```
+---
+
+# Дисперсия для выборок разного объема
+
+```{r echo=F}
+set.seed(4)
+library(dplyr)
+par(mfrow = c(1, 3))
+sample.means <- function(x, n) {
+  my_means <- c()
+  for(i in 1:x) {
+    my_sample <- sent.length %>% sample_n(n)
+    my_mean <- mean(my_sample$sent.l)
+    my_means <- c(my_means, my_mean)
+  }
+  my_var <- round(var(my_means), 2)
+  hist(my_means, xlab = paste0("sample size ", n), main = paste0("var = ", my_var))
+}
+sample.means(1000, 10)
+sample.means(1000, 100)
+sample.means(1000, 1000)
+```
+
+---
+
+# Проверим формулу
+
+```{r}
+sl <- sent.length$sent.l
+var(sl) / 10
+var(sl) / 100
+var(sl) / 1000
+```
+
+---
+# Стандартная ошибка среднего
+
+<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/f9dac77577c2717cbb973388e4d6563915705742" style="width: 60%" />
+
+.footnote[Источник: [Wikimedia.org](https://en.wikipedia.org/wiki/Standard_error)]
+---
+
+# Снова проверим...
+(справа квадратный корень из дисперсии, которую мы видели на графике)
+
+.pull-left[
+```{r}
+sd(sl) / sqrt(10)
+sd(sl) / sqrt(100)
+sd(sl) / sqrt(1000)
+```
+]
+
+.pull-right[
+```{r}
+sqrt(21.04)
+sqrt(2.42)
+sqrt(0.23)
+```
+]
+
+---
+
+# Нормальное распределение
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Standard_deviation_diagram.svg/2560px-Standard_deviation_diagram.svg.png" style="width: 70%" />
+
+.footnote[Источник: [Wikipedia.org](https://en.wikipedia.org/wiki/Normal_distribution)]
+
+
+---
+
+# Доверительный интервал
+
+<img src="https://media.geeksforgeeks.org/wp-content/uploads/20201028221445/CIDiagram.png" style="width: 70%" />
+
+.footnote[Источник: [Geeksforgeeks.org](https://www.geeksforgeeks.org/confidence-interval)]
+
+---
+# Доверительный интервал на графике
+
+```{r echo=FALSE}
+sample10 <- sample(sl, 10, replace = FALSE)
+sample100 <- sample(sl, 100, replace = FALSE)
+sample1000 <- sample(sl, 1000, replace = FALSE)
+
+library(ggplot2)
+library('gridExtra')
+
+dat = data.frame(
+  score = c(sample10, sample100, sample1000),
+  group = rep(c('10', '100', '1000'), c(10, 100, 1000))
+)
+
+ggplot(dat) +
+  aes(x = group, y = score, fill = group) +
+  stat_summary(geom = "bar", fun = "mean") +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", fun.args = list(mult = 2), width = .2)
+
+```
+
+---
+
+# 20 выборок по 1000 предложений
+```{r echo=FALSE}
+my_sem <- tibble()
+  for(i in 1:20) {
+    my_sample <- sample(sl, 1000)
+    my_dat <- mean_se(my_sample, mult = 2)
+    my_sem <- bind_rows(my_sem, my_dat)
+  }
+my_sem <- my_sem %>% mutate(x = row_number(), .before = y)
+
+ggplot(my_sem, aes(x, y)) + 
+  geom_point(color = "red") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax), color = "#636363") + 
+  geom_hline(yintercept = mean(sl))
+
+```
+---
+# Для сравнения 
+
+```{r echo=FALSE}
+Rep <- sent.length %>% filter(title == "Republic")
+Laws <- sent.length %>% filter(title == "Laws")
+
+Rep1000 <- sample(Rep$sent.l, 1000)
+Laws1000 <- sample(Laws$sent.l, 1000)
+
+dat2 = data.frame(
+  score = c(Rep1000, Laws1000),
+  group = rep(c('Rep', 'Laws'), c(1000, 1000))
+)
+
+ggplot(dat2) +
+  aes(x = group, y = score, fill = group) +
+  stat_summary(geom = "bar", fun = "mean") +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", fun.args = list(mult = 2), width = .2)
+
+```
+
+---
+
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

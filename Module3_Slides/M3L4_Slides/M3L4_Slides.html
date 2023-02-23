@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L4_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Доверительные интервалы
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# Дисперсия выборочных средних и дисперсия популяции
+
+&gt; Чем больше по объему выборка, тем меньше дисперсия выборочных средних. &lt;br/&gt;
+
+$$
+\sigma_x^2 = \sigma^2 / n,
+$$
+где 
+- `\(\sigma^2\)` - это дисперсия популяции
+- `\(\sigma_x^2\)` - дисперсия выборочных средних
+- n - объем выборки
+
+---
+# Длина предложений в Платоновском корпусе
+
+
+.pull-left[
+
+```r
+mean(sent.length$sent.l)
+```
+
+```
+## [1] 14.58815
+```
+]
+.pull-right[
+
+```r
+hist(sent.length$sent.l)
+```
+
+&lt;img src="M3L4_Slides_files/figure-html/unnamed-chunk-3-1.png" width="100%" /&gt;
+]
+
+---
+# Функция  
+
+
+```r
+sample.means &lt;- function(x, n) {
+  my_means &lt;- c()
+  for(i in 1:x) {
+    my_sample &lt;- sent.length %&gt;% sample_n(n)
+    my_mean &lt;- mean(my_sample$sent.l)
+    my_means &lt;- c(my_means, my_mean)
+  }
+  my_var &lt;- round(var(my_means), 2)
+  hist(my_means, xlab = paste0("sample size ", n), main = paste0("var = ", my_var))
+}
+```
+---
+
+# Дисперсия для выборок разного объема
+
+&lt;img src="M3L4_Slides_files/figure-html/unnamed-chunk-5-1.png" width="100%" /&gt;
+
+---
+
+# Проверим формулу
+
+
+```r
+sl &lt;- sent.length$sent.l
+var(sl) / 10
+```
+
+```
+## [1] 22.18552
+```
+
+```r
+var(sl) / 100
+```
+
+```
+## [1] 2.218552
+```
+
+```r
+var(sl) / 1000
+```
+
+```
+## [1] 0.2218552
+```
+
+---
+# Стандартная ошибка среднего
+
+&lt;img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/f9dac77577c2717cbb973388e4d6563915705742" style="width: 60%" /&gt;
+
+.footnote[Источник: [Wikimedia.org](https://en.wikipedia.org/wiki/Standard_error)]
+---
+
+# Снова проверим...
+(справа квадратный корень из дисперсии, которую мы видели на графике)
+
+.pull-left[
+
+```r
+sd(sl) / sqrt(10)
+```
+
+```
+## [1] 4.710151
+```
+
+```r
+sd(sl) / sqrt(100)
+```
+
+```
+## [1] 1.489481
+```
+
+```r
+sd(sl) / sqrt(1000)
+```
+
+```
+## [1] 0.4710151
+```
+]
+
+.pull-right[
+
+```r
+sqrt(21.04)
+```
+
+```
+## [1] 4.586938
+```
+
+```r
+sqrt(2.42)
+```
+
+```
+## [1] 1.555635
+```
+
+```r
+sqrt(0.23)
+```
+
+```
+## [1] 0.4795832
+```
+]
+
+---
+
+# Нормальное распределение
+
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Standard_deviation_diagram.svg/2560px-Standard_deviation_diagram.svg.png" style="width: 70%" /&gt;
+
+.footnote[Источник: [Wikipedia.org](https://en.wikipedia.org/wiki/Normal_distribution)]
+
+
+---
+
+# Доверительный интервал
+
+&lt;img src="https://media.geeksforgeeks.org/wp-content/uploads/20201028221445/CIDiagram.png" style="width: 70%" /&gt;
+
+.footnote[Источник: [Geeksforgeeks.org](https://www.geeksforgeeks.org/confidence-interval)]
+
+---
+# Доверительный интервал на графике
+
+&lt;img src="M3L4_Slides_files/figure-html/unnamed-chunk-9-1.png" width="100%" /&gt;
+
+---
+
+# 20 выборок по 1000 предложений
+&lt;img src="M3L4_Slides_files/figure-html/unnamed-chunk-10-1.png" width="100%" /&gt;
+---
+# Для сравнения 
+
+&lt;img src="M3L4_Slides_files/figure-html/unnamed-chunk-11-1.png" width="100%" /&gt;
+
+---
+
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L7_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Ранговый критерий Уилкоксона-Манна-Уитни
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# Ранговый критерий Уилкоксона-Манна-Уитни
+
+.pull-left[
+- непараметрический
+- одновыборочный или двухвыборочный
+- для зависимых и независимых выборок
+]
+
+.pull-right[
+&lt;img src="https://upload.wikimedia.org/wikipedia/en/9/9a/FrankWilcoxon.png" style="width: 50%" /&gt;
+
+.footnote[Фрэнк Уилкоксон (1892-1965)]
+]
+---
+
+# Частотность артикля у Платона и Аристотеля
+
+
+
+.pull-left[
+
+```r
+section.words.ar
+```
+
+```
+## # A tibble: 3,137 × 2
+##    section     n
+##      &lt;dbl&gt; &lt;int&gt;
+##  1       1     6
+##  2       2    17
+##  3       3    11
+##  4       4    16
+##  5       5    13
+##  6       6    12
+##  7       7    14
+##  8       8    14
+##  9       9    11
+## 10      10    11
+## # … with 3,127 more rows
+```
+]
+
+.pull-right[
+
+```r
+section.words.pl
+```
+
+```
+## # A tibble: 4,802 × 2
+##    section     n
+##      &lt;dbl&gt; &lt;int&gt;
+##  1       1     4
+##  2       2     5
+##  3       3     8
+##  4       4     6
+##  5       5     9
+##  6       6     6
+##  7       7     6
+##  8       8     5
+##  9       9     7
+## 10      10     8
+## # … with 4,792 more rows
+```
+]
+
+---
+# Выборки
+
+```r
+set.seed(10)
+pl.sample &lt;- section.words.pl %&gt;% sample_n(10) %&gt;% select(n) %&gt;% 
+  mutate(author = "Plato")
+pl.sample$n 
+```
+
+```
+##  [1]  8 11  5 11 12  6  6 17  5 10
+```
+
+```r
+ar.sample &lt;- section.words.ar %&gt;% sample_n(10) %&gt;% select(n) %&gt;%
+  mutate(author = "Aristotle")
+ar.sample$n
+```
+
+```
+##  [1] 17  9 16 17 17 13 18 12 11 14
+```
+---
+# Тест (с поправкой)
+
+```r
+wilcox.test(pl.sample$n, ar.sample$n)
+```
+
+```
+## 
+## 	Wilcoxon rank sum test with continuity correction
+## 
+## data:  pl.sample$n and ar.sample$n
+## W = 14, p-value = 0.006916
+## alternative hypothesis: true location shift is not equal to 0
+```
+
+---
+# Тест (без поправки)
+
+```r
+wilcox.test(pl.sample$n, ar.sample$n, correct = F)
+```
+
+```
+## 
+## 	Wilcoxon rank sum test
+## 
+## data:  pl.sample$n and ar.sample$n
+## W = 14, p-value = 0.006164
+## alternative hypothesis: true location shift is not equal to 0
+```
+---
+# Объединить и ранжировать
+
+```r
+tbl &lt;- bind_rows(pl.sample, ar.sample)
+rate.tbl &lt;- tbl %&gt;% arrange(n) %&gt;% mutate(row = row_number())
+rate.tbl
+```
+
+```
+## # A tibble: 20 × 3
+##        n author      row
+##    &lt;int&gt; &lt;chr&gt;     &lt;int&gt;
+##  1     5 Plato         1
+##  2     5 Plato         2
+##  3     6 Plato         3
+##  4     6 Plato         4
+##  5     8 Plato         5
+##  6     9 Aristotle     6
+##  7    10 Plato         7
+##  8    11 Plato         8
+##  9    11 Plato         9
+## 10    11 Aristotle    10
+## 11    12 Plato        11
+## 12    12 Aristotle    12
+## 13    13 Aristotle    13
+## 14    14 Aristotle    14
+## 15    16 Aristotle    15
+## 16    17 Plato        16
+## 17    17 Aristotle    17
+## 18    17 Aristotle    18
+## 19    17 Aristotle    19
+## 20    18 Aristotle    20
+```
+---
+# Cовпадающие значения
+
+```r
+rate.tbl &lt;- rate.tbl %&gt;% group_by(n) %&gt;% mutate(rank = mean(row)) %&gt;% 
+  ungroup()
+rate.tbl
+```
+
+```
+## # A tibble: 20 × 4
+##        n author      row  rank
+##    &lt;int&gt; &lt;chr&gt;     &lt;int&gt; &lt;dbl&gt;
+##  1     5 Plato         1   1.5
+##  2     5 Plato         2   1.5
+##  3     6 Plato         3   3.5
+##  4     6 Plato         4   3.5
+##  5     8 Plato         5   5  
+##  6     9 Aristotle     6   6  
+##  7    10 Plato         7   7  
+##  8    11 Plato         8   9  
+##  9    11 Plato         9   9  
+## 10    11 Aristotle    10   9  
+## 11    12 Plato        11  11.5
+## 12    12 Aristotle    12  11.5
+## 13    13 Aristotle    13  13  
+## 14    14 Aristotle    14  14  
+## 15    16 Aristotle    15  15  
+## 16    17 Plato        16  17.5
+## 17    17 Aristotle    17  17.5
+## 18    17 Aristotle    18  17.5
+## 19    17 Aristotle    19  17.5
+## 20    18 Aristotle    20  20
+```
+---
+# Суммировать ранги
+
+```r
+rate.tbl %&gt;% group_by(author) %&gt;% summarise(total = sum(rank))
+```
+
+```
+## # A tibble: 2 × 2
+##   author    total
+##   &lt;chr&gt;     &lt;dbl&gt;
+## 1 Aristotle   141
+## 2 Plato        69
+```
+---
+# U-значения
+.pull-left[
+
+### `$$U_1 = n_1n_2 + \frac{n_1(n_1+1)}{2} - R_1$$`
+
+```r
+u1 = 10*10 + ((10*(10+1))/2) - 141
+u1
+```
+
+```
+## [1] 14
+```
+]
+
+.pull-right[
+###$$U_2 = n_1n_2 + \frac{n_2(n_2+1)}{2} - R_2$$
+
+```r
+u2 = 10*10 + ((10*(10+1))/2) - 69
+u2
+```
+
+```
+## [1] 86
+```
+]
+---
+# Z-значение
+
+
+### `$$z = \frac{U-\frac{n_1n_2}{2}}{\sqrt{\frac{n_1n_2}{N(N-1)} \bigg(\frac{N^3-N}{12} - \displaystyle\sum_{i=1}^{k} T_i \bigg)}}$$`
+
+где 
+### `\(T_i = (t_i^3 - t_i) / 12\)` 
+---
+
+# Сумма `\(T_i\)`
+
+```r
+ties &lt;- rate.tbl %&gt;% group_by(n) %&gt;% summarise(ties = n()) %&gt;% 
+  filter(ties &gt; 1) %&gt;% pull(ties)
+ties
+```
+
+```
+## [1] 2 2 3 2 4
+```
+
+```r
+vec_t &lt;- c()
+ for (i in ties) {
+  ti &lt;- (i^3 - i)/12
+  vec_t &lt;- c(vec_t, ti)
+}
+sum_t &lt;- sum(vec_t)
+sum_t
+```
+
+```
+## [1] 8.5
+```
+---
+# Тест (без поправки)
+
+```r
+u = min(u1, u2)
+N = 20
+n1 = 10
+n2 =10
+num = u - (n1*n2)/2
+den1 = (n1*n2)/(N*(N-1))
+den2 = ((N^3 - N) / 12) - sum_t
+den = sqrt(den1 * den2)
+z = num / den
+z
+```
+
+```
+## [1] -2.738905
+```
+
+```r
+pnorm(z) * 2 
+```
+
+```
+## [1] 0.006164422
+```
+---
+# Тест (без поправки)
+.pull-left[
+
+```r
+u = min(u1, u2)
+N = 20
+n1 = 10
+n2 =10
+num = u - (n1*n2)/2
+den1 = (n1*n2)/(N*(N-1))
+den2 = ((N^3 - N) / 12) - sum_t
+den = sqrt(den1 * den2)
+z = num / den
+z
+```
+
+```
+## [1] -2.738905
+```
+
+```r
+pnorm(z) * 2 
+```
+
+```
+## [1] 0.006164422
+```
+]
+
+.pull-right[
+
+```r
+wilcox.test(pl.sample$n, ar.sample$n, correct = F)
+```
+
+```
+## 
+## 	Wilcoxon rank sum test
+## 
+## data:  pl.sample$n and ar.sample$n
+## W = 14, p-value = 0.006164
+## alternative hypothesis: true location shift is not equal to 0
+```
+]
+---
+# Тест (с поправкой)
+.pull-left[
+
+```r
+correction &lt;- sign(num) * 0.5 
+correction
+```
+
+```
+## [1] -0.5
+```
+
+```r
+zcorr &lt;- (num - correction) / den 
+zcorr
+```
+
+```
+## [1] -2.700864
+```
+
+```r
+pnorm(zcorr) * 2
+```
+
+```
+## [1] 0.006915952
+```
+]
+
+.pull-right[
+
+```r
+wilcox.test(pl.sample$n, ar.sample$n)
+```
+
+```
+## 
+## 	Wilcoxon rank sum test with continuity correction
+## 
+## data:  pl.sample$n and ar.sample$n
+## W = 14, p-value = 0.006916
+## alternative hypothesis: true location shift is not equal to 0
+```
+]
+
+---
+# Размер выборки и мощность
+
+```r
+wilcox.test(pl.sample$n[1:5], ar.sample$n[1:5])
+```
+
+```
+## 
+## 	Wilcoxon rank sum test with continuity correction
+## 
+## data:  pl.sample$n[1:5] and ar.sample$n[1:5]
+## W = 3, p-value = 0.05624
+## alternative hypothesis: true location shift is not equal to 0
+```
+---
+
+&lt;img src="M3L7_Slides_files/figure-html/unnamed-chunk-19-1.png" width="100%" /&gt;
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э. Визуализация данных с помощью ggplot2. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

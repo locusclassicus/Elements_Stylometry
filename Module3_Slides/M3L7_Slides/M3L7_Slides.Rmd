@@ -1,0 +1,271 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Ранговый критерий Уилкоксона-Манна-Уитни"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+# Ранговый критерий Уилкоксона-Манна-Уитни
+
+.pull-left[
+- непараметрический
+- одновыборочный или двухвыборочный
+- для зависимых и независимых выборок
+]
+
+.pull-right[
+<img src="https://upload.wikimedia.org/wikipedia/en/9/9a/FrankWilcoxon.png" style="width: 50%" />
+
+.footnote[Фрэнк Уилкоксон (1892-1965)]
+]
+---
+
+# Частотность артикля у Платона и Аристотеля
+
+```{r echo=FALSE}
+library(dplyr)
+my_words = "ὁ"
+
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/PlatoWords.Rdata")
+spuria <- c("Alcibiades1", "Alcibiades2", "Cleitophon", "Crito", "Epinomis", "Epistles", "Euthyphro", "Hipparchus", "HippiasMajor", "HippiasMinor", "Ion", "Lovers", "Menexenus", "Minos", "Theages")
+Plato <- words.tbl %>% filter(!title %in% spuria)
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/AristotleTidy.Rdata")
+
+section.words.pl <- Plato %>% mutate(section = (row_number() %/% 100)+1) %>% filter(word %in% my_words) %>% mutate(word = factor(word)) %>% 
+  group_by(section, word, .drop = F) %>% count() %>% 
+  ungroup() %>% select(-word)
+section.words.ar <- Aristotle.tidy %>% mutate(section = (row_number() %/% 100)+1) %>% filter(word %in% my_words) %>% mutate(word = factor(word)) %>% group_by(section, word, .drop = F) %>% count() %>%
+  ungroup() %>% select(-word)
+```
+
+.pull-left[
+```{r}
+section.words.ar
+```
+]
+
+.pull-right[
+```{r}
+section.words.pl
+```
+]
+
+---
+# Выборки
+```{r}
+set.seed(10)
+pl.sample <- section.words.pl %>% sample_n(10) %>% select(n) %>% 
+  mutate(author = "Plato")
+pl.sample$n 
+ar.sample <- section.words.ar %>% sample_n(10) %>% select(n) %>%
+  mutate(author = "Aristotle")
+ar.sample$n
+```
+---
+# Тест (с поправкой)
+```{r}
+wilcox.test(pl.sample$n, ar.sample$n)
+```
+
+---
+# Тест (без поправки)
+```{r}
+wilcox.test(pl.sample$n, ar.sample$n, correct = F)
+```
+---
+# Объединить и ранжировать
+```{r}
+tbl <- bind_rows(pl.sample, ar.sample)
+rate.tbl <- tbl %>% arrange(n) %>% mutate(row = row_number())
+rate.tbl
+```
+---
+# Cовпадающие значения
+```{r}
+rate.tbl <- rate.tbl %>% group_by(n) %>% mutate(rank = mean(row)) %>% 
+  ungroup()
+rate.tbl
+```
+---
+# Суммировать ранги
+```{r}
+rate.tbl %>% group_by(author) %>% summarise(total = sum(rank))
+```
+---
+# U-значения
+.pull-left[
+
+### $$U_1 = n_1n_2 + \frac{n_1(n_1+1)}{2} - R_1$$
+```{r}
+u1 = 10*10 + ((10*(10+1))/2) - 141
+u1
+```
+]
+
+.pull-right[
+###$$U_2 = n_1n_2 + \frac{n_2(n_2+1)}{2} - R_2$$
+```{r}
+u2 = 10*10 + ((10*(10+1))/2) - 69
+u2
+```
+]
+---
+# Z-значение
+
+
+### $$z = \frac{U-\frac{n_1n_2}{2}}{\sqrt{\frac{n_1n_2}{N(N-1)} \bigg(\frac{N^3-N}{12} - \displaystyle\sum_{i=1}^{k} T_i \bigg)}}$$
+
+где 
+### $T_i = (t_i^3 - t_i) / 12$ 
+---
+
+# Сумма $T_i$
+```{r}
+ties <- rate.tbl %>% group_by(n) %>% summarise(ties = n()) %>% 
+  filter(ties > 1) %>% pull(ties)
+ties
+
+vec_t <- c()
+ for (i in ties) {
+  ti <- (i^3 - i)/12
+  vec_t <- c(vec_t, ti)
+}
+sum_t <- sum(vec_t)
+sum_t
+```
+---
+# Тест (без поправки)
+```{r}
+u = min(u1, u2)
+N = 20
+n1 = 10
+n2 =10
+num = u - (n1*n2)/2
+den1 = (n1*n2)/(N*(N-1))
+den2 = ((N^3 - N) / 12) - sum_t
+den = sqrt(den1 * den2)
+z = num / den
+z
+pnorm(z) * 2 
+
+```
+---
+# Тест (без поправки)
+.pull-left[
+```{r}
+u = min(u1, u2)
+N = 20
+n1 = 10
+n2 =10
+num = u - (n1*n2)/2
+den1 = (n1*n2)/(N*(N-1))
+den2 = ((N^3 - N) / 12) - sum_t
+den = sqrt(den1 * den2)
+z = num / den
+z
+pnorm(z) * 2 
+```
+]
+
+.pull-right[
+```{r}
+wilcox.test(pl.sample$n, ar.sample$n, correct = F)
+```
+]
+---
+# Тест (с поправкой)
+.pull-left[
+```{r}
+correction <- sign(num) * 0.5 
+correction
+zcorr <- (num - correction) / den 
+zcorr
+pnorm(zcorr) * 2
+```
+]
+
+.pull-right[
+```{r}
+wilcox.test(pl.sample$n, ar.sample$n)
+```
+]
+
+---
+# Размер выборки и мощность
+```{r}
+wilcox.test(pl.sample$n[1:5], ar.sample$n[1:5])
+```
+---
+
+```{r echo=F} 
+bigsample.ar <- section.words.ar %>% sample_n(size = 3000) %>% mutate(author = "Aristotle")
+bigsample.pl <- section.words.pl %>% sample_n(size = 3000) %>% mutate(author = "Plato")
+big.tbl <- bind_rows(bigsample.ar, bigsample.pl) %>% select(-section)
+
+means <- big.tbl %>% group_by(author) %>% summarize(means = mean(n)) %>% pull(means)
+library(ggplot2)
+big.tbl %>% ggplot(aes(n, fill = author)) + geom_bar() + 
+  geom_vline(xintercept = means[1], color = "grey39") + 
+  geom_vline(xintercept = means[2], color = "grey39") +
+  theme_minimal()
+```
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э. Визуализация данных с помощью ggplot2. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

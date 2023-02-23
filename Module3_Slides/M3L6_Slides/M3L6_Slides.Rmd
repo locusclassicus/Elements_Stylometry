@@ -1,0 +1,310 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Т-распределение и критерий Стьюдента"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+.pull-left[
+# Z-статистика 
+
+# $$\frac{\bar{x}-\mu}{\sigma/\sqrt{n}}$$
+
+]
+
+.pull-right[
+# T-статистика
+
+# $$\frac{\bar{x}-\mu}{s/\sqrt{n}}$$
+]
+---
+# Распределение Стьюдента
+
+.pull-left[
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/William_Sealy_Gosset.jpg/1024px-William_Sealy_Gosset.jpg" style="width: 70%" />
+]
+
+.pull-right[
+- Когда параметр популяции $\sigma$ неизвестен, но известно стандартное отклонение s для выборки, то его можно использовать для оценки $\sigma$.
+
+- Cтандартную ошибку среднего популяции $\sigma/\sqrt{n}$  можно оценить с помощью стандартной ошибки среднего выборки $s/\sqrt{n}$
+
+]
+---
+# T-статистика
+
+.pull-left[
+# $$\frac{\bar{x}-\mu}{s/\sqrt{n}}$$
+]
+
+.pull-right[
+###  Каждое новое значение n приводит к новому t-распределению
+]
+---
+# Степени свободы
+```{r echo=FALSE}
+library(gridExtra)
+library(ggplot2)
+k <- 1000
+xvals <- seq(-4, 4, length = k)
+## plot 1
+d <- data.frame(y = c(dnorm(xvals), dt(xvals, 2)),
+                  x = xvals,
+                  dist = factor(rep(c("Normal", "T"), c(k,k))))
+p1 <- ggplot(d, aes(x = x, y = y)) + geom_line(aes(colour = dist), show.legend = F) +
+   xlab("t") + ylab("density") + ggtitle("df=2") + theme_classic()
+
+## plot 2
+d <- data.frame(y = c(dnorm(xvals), dt(xvals, 5)),
+                x = xvals,
+                dist = factor(rep(c("Normal", "T"), c(k,k))))
+p2 <- ggplot(d, aes(x = x, y = y)) + geom_line(aes(colour = dist), show.legend = F) +
+  xlab("t") + ylab("density") + ggtitle("df=5") + theme_classic()
+
+grid.arrange(p1, p2, nrow = 1)
+```
+---
+# Артикль у Платона
+```{r echo=FALSE}
+library(dplyr)
+library(MASS)
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/PlatoWords.Rdata")
+my_words = "ὁ"
+spuria <- c("Alcibiades1", "Alcibiades2", "Cleitophon", "Crito", "Epinomis", "Epistles", "Euthyphro", "Hipparchus", "HippiasMajor", "HippiasMinor", "Ion", "Lovers", "Menexenus", "Minos", "Theages")
+Plato <- words.tbl %>% filter(!title %in% spuria)
+section.words.pl <- Plato %>% mutate(section = (row_number() %/% 100)+1) %>% filter(word %in% my_words) %>% mutate(word = factor(word)) %>% 
+  group_by(section, word, .drop = F) %>% count() %>% mutate(author = "Plato")
+truehist(section.words.pl$n)
+```
+---
+# Проверка на нормальность
+.pull-left[
+```{r}
+shapiro.test(section.words.pl$n)
+```
+]
+
+.pull-right[
+```{r echo=FALSE}
+library(ggpubr)
+ggqqplot(section.words.pl$n)
+```
+]
+---
+#  Выборочные средние
+```{r}
+sample.count.pl <- function(x) {
+  my_counts <- c()
+  for (i in 1:x){
+  my_sample <- Plato %>% sample_n(100) %>% filter(word %in% my_words) 
+  n <- my_sample %>% summarize(n = n())
+  my_counts <- c(my_counts, as.numeric(n))
+  }
+  my_counts
+}
+
+set.seed(10)
+pl_means <- c()
+for (i in 1:10) {
+m <- mean(sample.count.pl(5))
+pl_means <- c(pl_means, m)
+}
+```
+---
+# Проверка на нормальность 
+.pull-left[
+```{r}
+shapiro.test(pl_means)
+```
+]
+
+.pull-right[
+```{r}
+ggqqplot(pl_means)
+```
+]
+---
+#  T-статистика
+```{r}
+mu = mean(section.words.pl$n)
+mu
+xbar = mean(pl_means)
+xbar
+s = sd(pl_means)
+s
+tstat = (xbar - mu) / (s / sqrt(10))
+tstat
+```
+---
+# P-значение
+```{r}
+2*(1-pt(abs(tstat), 9))
+
+t.test(pl_means, mu= mu)
+```
+---
+# Доверительный интервал
+
+## $$CI_{1-α} = \bar{x}\pm\bigg({t_\frac{a}{2},_{df}}\bigg)\bigg(\frac{s}{\sqrt{n}}\bigg)$$
+
+```{r}
+tstat <- qt(0.025, 9) 
+tstat
+xbar + c(-1,1) * tstat * (s / sqrt(10))
+```
+---
+# T.test
+
+```{r}
+t.test(pl_means, mu=mu)
+```
+---
+# Двухвыборочный t-критерий
+- бывает для зависимых и **независимых** выборок
+- генеральные совокупности имеют примерно нормальное распределение (или применима ТЦП)
+- их дисперсии  приблизительно равны
+---
+
+# Артикль у Аристотеля 
+
+```{r echo=FALSE}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/AristotleTidy.Rdata")
+section.words.ar <- Aristotle.tidy %>% mutate(section = (row_number() %/% 100)+1) %>% filter(word %in% my_words) %>% mutate(word = factor(word)) %>% group_by(section, word, .drop = F) %>% count() %>% mutate(author = "Aristotle")
+truehist(section.words.ar$n)
+```
+---
+# Проверка на нормальность 
+.pull-left[
+```{r}
+shapiro.test(section.words.ar$n)
+```
+]
+
+.pull-right[
+```{r}
+ggqqplot(section.words.ar$n)
+```
+]
+---
+# Выборочные средние
+
+```{r}
+sample.count.ar <- function(x) {
+  my_counts <- c()
+  for (i in 1:x){
+  my_sample <- Aristotle.tidy %>% sample_n(100) %>% filter(word %in% my_words) 
+  n <- my_sample %>% summarize(n = n())
+  my_counts <- c(my_counts, as.numeric(n))
+  }
+  my_counts
+}
+
+set.seed(10)
+ar_means <- c()
+for (i in 1:10) {
+m <- mean(sample.count.ar(5))
+ar_means <- c(ar_means, m)
+}
+
+```
+---
+# Проверка на нормальность 
+.pull-left[
+```{r}
+shapiro.test(ar_means)
+```
+]
+
+.pull-right[
+```{r}
+ggqqplot(ar_means)
+```
+]
+---
+# Модификация Уэлча
+
+# $$ t = \frac{\bar{x_1}-\bar{x_2}}{\sqrt{\frac{s_1^2}{n_1}+\frac{s_2^2}{n_2}}} $$
+---
+# Двухвыборочный критерий
+
+```{r}  
+ar_means
+pl_means
+num = mean(ar_means) - mean(pl_means)
+den = (((sd(ar_means))^2)/10) + (((sd(pl_means))^2)/10)
+t = num/ sqrt(den)
+t
+```
+
+---
+# T.test
+```{r}
+t.test(ar_means, pl_means)
+```
+---
+# Диаграмма размаха
+```{r echo=FALSE}
+article.df <- bind_rows(section.words.ar, section.words.pl)
+article.df %>% ggplot(aes(author, n, fill = author)) + geom_boxplot()
+```
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э. Визуализация данных с помощью ggplot2. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

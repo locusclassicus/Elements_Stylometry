@@ -1,0 +1,200 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Оценка мощности"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+# Оценка мощности
+- ошибка первого типа (α): отвергнута верная нулевая гипотеза
+
+- ошибка второго типа (β): не отвергнута ложная нулева гипотеза
+
+- мощность = 1-β
+
+- оценка мощности: насколько вероятно, что статистически значимая разница будет обнаружена с данным объемом выборки при истинной альтернативной гипотезе?
+---
+# Анализ мощности
+
+-  величина ожидаемого эффекта 
+
+- число выполненных измерений (необходимо выяснить)
+
+- величина уровня значимости (α)
+
+- мощность критерия
+---
+# Величина эффекта и размер выборки
+```{r}
+library(pwr)
+pwr.t.test(d = .2,
+           sig.level = 0.05,
+           power = 0.8)
+```
+---
+# Величина эффекта и размер выборки
+```{r}
+library(pwr)
+pwr.t.test(d = .5,
+           sig.level = 0.05,
+           power = 0.8)
+```
+---
+# Частотность артикля
+```{r echo=F}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/PlatoWords.Rdata")
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/AristotleTidy.Rdata")
+library(dplyr)
+spuria <- c("Alcibiades1", "Alcibiades2", "Cleitophon", "Crito", "Epinomis",
+            "Epistles", "Euthyphro", "Hipparchus", "HippiasMajor", "HippiasMinor",
+            "Ion", "Lovers", "Menexenus", "Minos", "Theages")
+Plato <- words.tbl %>% filter(!title %in% spuria)
+
+my_word <- "ὁ"
+
+section.words.pl <- Plato %>% mutate(section = (row_number() %/% 100)+1) %>% 
+  filter(word %in% my_word) %>% mutate(word = factor(word)) %>% 
+  group_by(section, word, .drop = F) %>% count() %>% 
+  mutate(author = "Plato") %>% ungroup()
+
+section.words.ar <- Aristotle.tidy %>% mutate(section = (row_number() %/% 100)+1) %>% 
+  filter(word %in% my_word) %>% mutate(word = factor(word)) %>% 
+  group_by(section, word, .drop = F) %>% count() %>% 
+  mutate(author = "Aristotle") %>% ungroup()
+
+## sample 10 sections 100 words each
+set.seed(11)
+sample.ar <- section.words.ar %>% select(-section, -word) %>% 
+  sample_n(size = 5)
+sample.pl <- section.words.pl %>% select(-section, -word) %>% 
+  sample_n(size = 5)
+sample.ar
+sample.pl
+```
+---
+# Двухвыборочный тест
+```{r}
+t.test(sample.ar$n, sample.pl$n)
+```
+---
+# Узнать размер эффекта
+.pull-left[
+```{r}
+library(lsr)
+both_groups <- bind_rows(sample.ar, sample.pl)
+d <- cohensD(n ~ author,
+        data = both_groups)
+d
+num <- mean(sample.ar$n) - mean(sample.pl$n) 
+den <- sqrt((sd(sample.ar$n)^2 + 
+               sd(sample.pl$n)^2)/2) 
+## pooled sd
+num/den 
+```
+]
+
+.pull-right[
+<img src="https://www.researchgate.net/publication/265214204/figure/fig1/AS:202946290688000@1425397574752/d-Cohens-d-effect-size-X1-and-X2-means-of-the-two-groups-s1-and-s2-standard_W640.jpg" /> 
+
+]
+---
+# Подставляем данные...
+```{r}
+pwr.t.test(n = 5, sig.level = 0.05, d = d)
+```
+---
+# Какая нужна выборка?
+```{r}
+pwr.t.test(power = 0.8, sig.level = 0.05, d = d)
+```
+---
+# Таблица сопряженности
+```{r echo=FALSE}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/DialogueType.Rdata")
+dialogues <- dialogues[,-1 ]
+mx <- table(dialogues)
+mx
+```
+---
+# Тест хи-квадрат
+```{r}
+chisq.test(mx, correct = F)
+```
+---
+# Наблюдаемые вероятности
+```{r}
+res <- chisq.test(mx, correct = F)
+obs <- res$observed / (5+11+1+8)
+obs
+```
+---
+# Величина эффекта
+```{r}
+ES.w2(obs)
+cohen.ES(test = "chisq", size = "small")
+cohen.ES(test = "chisq", size = "medium")
+```
+---
+# Оценка мощности
+```{r}
+pwr.chisq.test(w=ES.w2(obs), df=1, N = 25)
+```
+---
+# Сколько наблюдений нам нужно?
+```{r}
+pwr.chi <- pwr.chisq.test(w=ES.w2(obs), df=1, power = 0.8)
+plot(pwr.chi)
+```
+
+---
+# Литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Cohen J. Statistical Power Analysis for the Behavioral Sciences. 2nd ed. New York, 1988. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

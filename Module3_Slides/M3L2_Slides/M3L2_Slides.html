@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L2_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Нормальное распределение и его свойства
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# Нормальное распределение
+
+
+
+```r
+tbl &lt;- tibble(x = rnorm(1000, mean = 3, sd = 4), y = rnorm(1000, mean = 1, sd = 1.5), 
+              z = rnorm(1000, mean = -2.5, sd = 2.5))
+tbl %&gt;% gather("type", "value", x:z) %&gt;% ggplot(aes(value)) + 
+  geom_density(aes(fill = type), linetype = 2, alpha = 0.5)
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-2-1.png" width="100%" /&gt;
+
+---
+# Стандартное нормальное распределение
+
+
+```r
+hist(rnorm(1000))
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-3-1.png" width="100%" /&gt;
+
+---
+# Свойства нормального распределения
+
+- Симметричность 
+
+-	Унимодальность (единственное наиболее частое значение)
+
+-	Непрерывность значений в диапазоне от минус бесконечности до плюс бесконечности
+
+-	Общая площадь под кривой, равная единице
+
+-	Равенство среднего, медианы и моды
+
+
+---
+# Z-значения
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-4-1.png" width="100%" /&gt;
+
+
+---
+# Как рассчитать Z-значения?
+
+.pull-left[
+&lt;img src="https://miro.medium.com/max/1128/0*zsPSyjpTtPOmKUQy.png" style="width: 100%" /&gt;
+
+.footnote[Источник: [Medium.com](https://medium.com/statistical-guess/z-score-standard-score-normal-score-43507c727334)
+]]
+
+.pull-right[
+
+```r
+mu &lt;- 100
+sigma &lt;- 5
+(105 - mu) / sigma
+```
+
+```
+## [1] 1
+```
+]
+---
+# Функция плотности вероятности
+
+.pull-left[
+&lt;img src="https://cdn-5a6cb102f911c811e474f1cd.closte.com/wp-content/uploads/2017/11/Normal-Distribution-Probability-Density-Function.png" /&gt;
+
+.footnote[Источник: [howtoexcel.org/](https://www.howtoexcel.org/normal-distribution/)
+]]
+
+.pull-right[
+
+```r
+f &lt;- function(x) {
+  (1/(1*sqrt(2 * pi))) * 
+    (exp(1)^(-((x - 0)^2) / (2 * 1^2)))
+  }
+f(1)
+```
+
+```
+## [1] 0.2419707
+```
+
+```r
+dnorm(1)
+```
+
+```
+## [1] 0.2419707
+```
+]
+
+---
+# Кумулятивная функция распределения - 1
+
+
+```r
+pnorm(-1)
+```
+
+```
+## [1] 0.1586553
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-8-1.png" width="100%" /&gt;
+---
+
+# Кумулятивная функция распределения - 2
+
+
+```r
+pnorm(1)
+```
+
+```
+## [1] 0.8413447
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-10-1.png" width="100%" /&gt;
+---
+
+# Кумулятивная функция распределения - 3
+
+
+```r
+*pnorm(1, lower.tail = F)
+```
+
+```
+## [1] 0.1586553
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-12-1.png" width="100%" /&gt;
+---
+# Не только стандартные 
+
+.pull-right[
+
+```r
+mu = 100
+sigma = 20
+pnorm(80, mean = mu, sd = sigma)
+```
+
+```
+## [1] 0.1586553
+```
+]
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Redhead_Cat_%28%D0%A0%D1%8B%D0%B6%D0%B8%D0%B9_%D0%9A%D0%BE%D1%82%29.jpg", style="width: 50%"  /&gt;
+
+.footnote[Источник: Wikimedia Commons]
+
+---
+# Qnorm() &amp; rnorm() 
+
+
+```r
+qnorm(p = 0.16, mean = 100, sd = 20)
+```
+
+```
+## [1] 80.11084
+```
+
+```r
+hist(rnorm(100))
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-14-1.png" width="100%" /&gt;
+---
+# Теорема центрального предела
+
+&gt; Выборочные средние распределены  нормально, даже если значения генеральной совокупности, из которой произошли эти выборки, имеют другое распределение.
+
+.pull-left[
+
+```r
+x &lt;- sample(1000, 100)
+hist(x)
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-15-1.png" width="100%" /&gt;
+]
+.pull-right[
+
+```r
+means &lt;- c()
+for (i in 1:500) {
+  m &lt;- mean(sample(x, 20, replace = T))
+  means &lt;- c(means, m)
+}
+hist(means)
+```
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-16-1.png" width="100%" /&gt;
+]
+---
+# Графические тесты на нормальность 
+
+&lt;img src="M3L2_Slides_files/figure-html/unnamed-chunk-17-1.png" width="100%" /&gt;
+---
+# Формальные тесты на нормальность
+.pull-left[
+
+```r
+shapiro.test(x)
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  x
+## W = 0.98842, p-value = 0.5396
+```
+
+```r
+shapiro.test(y)
+```
+
+```
+## 
+## 	Shapiro-Wilk normality test
+## 
+## data:  y
+## W = 0.44642, p-value &lt; 2.2e-16
+```
+]
+.pull-right[
+
+```r
+ks.test(x, "pnorm")
+```
+
+```
+## 
+## 	One-sample Kolmogorov-Smirnov test
+## 
+## data:  x
+## D = 0.054854, p-value = 0.9243
+## alternative hypothesis: two-sided
+```
+
+```r
+ks.test(y, "pnorm")
+```
+
+```
+## 
+## 	One-sample Kolmogorov-Smirnov test
+## 
+## data:  y
+## D = 1, p-value &lt; 2.2e-16
+## alternative hypothesis: two-sided
+```
+]
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

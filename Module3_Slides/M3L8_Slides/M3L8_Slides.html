@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L8_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Критерий хи-квадрат
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# Распределение хи-квадрат
+&lt;img src="M3L8_Slides_files/figure-html/unnamed-chunk-1-1.png" width="100%" /&gt;
+---
+
+&lt;img src="M3L8_Slides_files/figure-html/unnamed-chunk-2-1.png" width="100%" /&gt;
+---
+# От статистики к вероятности
+
+```r
+pchisq(9.49, 4)
+```
+
+```
+## [1] 0.9500469
+```
+
+```r
+qchisq(0.95, 4)
+```
+
+```
+## [1] 9.487729
+```
+---
+# Критерий согласия: датасет
+
+
+
+```r
+my_words = c("γε", "μέν", "δέ",	"γάρ", "οὖν")
+section.words.pl &lt;- words.tbl %&gt;% mutate(section = (row_number() %/% 5000)+1) %&gt;% 
+  filter(word %in% my_words) %&gt;% mutate(word = factor(word)) %&gt;%
+  group_by(section, word, .drop = F) %&gt;% count() %&gt;% ungroup()
+pl_sample &lt;- section.words.pl %&gt;% filter(section == 50) %&gt;% select(-section)
+pl_sample
+```
+
+```
+## # A tibble: 5 × 2
+##   word      n
+##   &lt;fct&gt; &lt;int&gt;
+## 1 γάρ      26
+## 2 γε        4
+## 3 δέ      186
+## 4 μέν      75
+## 5 οὖν      25
+```
+---
+# Критерий согласия: тест
+
+```r
+chisq.test(pl_sample$n)
+```
+
+```
+## 
+## 	Chi-squared test for given probabilities
+## 
+## data:  pl_sample$n
+## X-squared = 341.25, df = 4, p-value &lt; 2.2e-16
+```
+---
+# Под капотом критерия согласия
+.pull-left[
+
+```r
+mu &lt;- mean(pl_sample$n)
+mu
+```
+
+```
+## [1] 63.2
+```
+
+```r
+chis &lt;- c()
+for (i in 1:length(pl_sample$n)) {
+  chi = (pl_sample$n[i] - mu)^2 / mu
+  chis &lt;- c(chis, chi)
+}
+sum(chis)
+```
+
+```
+## [1] 341.2468
+```
+
+```r
+1 - pchisq(341.2468, df = 4) 
+```
+
+```
+## [1] 0
+```
+]
+
+.pull-right[
+##$$\sum_{i=1}^{n}\frac{(O_i - E_i)^2}{E_i}$$
+]
+---
+# Сравнение двух распределений
+.pull-left[
+
+
+
+```r
+ar_sample
+```
+
+```
+## # A tibble: 5 × 2
+##   word      n
+##   &lt;fct&gt; &lt;int&gt;
+## 1 γάρ      81
+## 2 γε        2
+## 3 δέ      204
+## 4 μέν      99
+## 5 οὖν      29
+```
+]
+
+.pull-right[
+
+```r
+pl_sample
+```
+
+```
+## # A tibble: 5 × 2
+##   word      n
+##   &lt;fct&gt; &lt;int&gt;
+## 1 γάρ      26
+## 2 γε        4
+## 3 δέ      186
+## 4 μέν      75
+## 5 οὖν      25
+```
+]
+---
+# Таблица сопряженности
+
+```r
+library(janitor)
+pl_sample &lt;- pl_sample %&gt;% mutate(who = "Plato")
+ar_sample &lt;- ar_sample %&gt;% mutate(who = "Aristotle")
+observed &lt;- bind_rows(pl_sample, ar_sample) %&gt;% spread(word, n)
+observed
+```
+
+```
+## # A tibble: 2 × 6
+##   who         γάρ    γε    δέ   μέν   οὖν
+##   &lt;chr&gt;     &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+## 1 Aristotle    81     2   204    99    29
+## 2 Plato        26     4   186    75    25
+```
+
+```r
+observed &lt;-  as.data.frame(observed)
+rownames(observed) &lt;- observed$who
+observed &lt;- observed[, -1] 
+observed
+```
+
+```
+##           γάρ γε  δέ μέν οὖν
+## Aristotle  81  2 204  99  29
+## Plato      26  4 186  75  25
+```
+---
+# Сравнение: тест хи-квадрат
+
+```r
+chisq.test(observed)
+```
+
+```
+## 
+## 	Pearson's Chi-squared test
+## 
+## data:  observed
+## X-squared = 20.341, df = 4, p-value = 0.0004277
+```
+---
+# Под капотом функции
+
+```r
+library(janitor); observed.totals &lt;- bind_rows(pl_sample, ar_sample) %&gt;% 
+  spread(word, n) %&gt;% adorn_totals("row") %&gt;% adorn_totals("col")
+observed.totals
+```
+
+```
+##        who γάρ γε  δέ μέν οὖν Total
+##  Aristotle  81  2 204  99  29   415
+##      Plato  26  4 186  75  25   316
+##      Total 107  6 390 174  54   731
+```
+
+```r
+415/731  ; 107/731
+```
+
+```
+## [1] 0.5677155
+```
+
+```
+## [1] 0.1463748
+```
+
+```r
+(415/731)  * (107/731) * 731
+```
+
+```
+## [1] 60.74555
+```
+---
+
+```r
+ar.expected &lt;- (415/731) * (observed.totals[3, 2:6]/731) * 731
+pl.expected &lt;- (316/731) * (observed.totals[3, 2:6]/731) * 731
+
+ar.observed &lt;- observed[1, ]
+pl.observed &lt;- observed[2, ]
+
+ar.chi &lt;- ((ar.observed - ar.expected)^2) / ar.expected
+pl.chi &lt;- ((pl.observed - pl.expected)^2) / pl.expected
+
+sum(ar.chi) + sum(pl.chi)
+```
+
+```
+## [1] 20.34052
+```
+---
+# Критерий независимости
+
+
+```r
+head(dialogues) ;  dialogues &lt;- dialogues[,-1 ]
+```
+
+```
+##      dialogue     type   protag
+## 1 Alcibiades1   direct Socrates
+## 3   Charmides narrated Socrates
+## 4    Cratylus   direct Socrates
+## 5     Critias   direct    Other
+## 6  Euthydemus narrated Socrates
+## 7   Euthyphro   direct Socrates
+```
+
+```r
+table(dialogues)
+```
+
+```
+##           protag
+## type       Other Socrates
+##   direct       5       11
+##   narrated     1        8
+```
+---
+# Тест (без поправки)
+.pull-left[
+
+```r
+chisq.test(table(dialogues), correct = F)
+```
+
+```
+## 
+## 	Pearson's Chi-squared test
+## 
+## data:  table(dialogues)
+## X-squared = 1.2808, df = 1, p-value = 0.2578
+```
+
+```r
+num &lt;- 25*((5*8 - 11)^2)
+den &lt;-  (5+11)*(1+8)*(5+1)*(11+8)
+num/den
+```
+
+```
+## [1] 1.280763
+```
+]
+
+.pull-right[
+
+```r
+table(dialogues)
+```
+
+```
+##           protag
+## type       Other Socrates
+##   direct       5       11
+##   narrated     1        8
+```
+`$$\frac{N(AD-BC)^2}{(A+B)(C+D)(A+C)(B+D)}$$`
+]
+---
+# Тест (с поправкой)
+.pull-left[
+
+```r
+chisq.test(table(dialogues), correct = T)
+```
+
+```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  table(dialogues)
+## X-squared = 0.41461, df = 1, p-value = 0.5196
+```
+
+```r
+num &lt;- 25*((abs(5*8 - 11) - 25/2)^2)
+den &lt;-  (5+11)*(1+8)*(5+1)*(11+8)
+num/den
+```
+
+```
+## [1] 0.4146107
+```
+]
+
+.pull-right[
+
+```r
+table(dialogues)
+```
+
+```
+##           protag
+## type       Other Socrates
+##   direct       5       11
+##   narrated     1        8
+```
+
+
+`$$\frac{N(|AD-BC| - N/2)^2}{(A+B)(C+D)(A+C)(B+D)}$$`
+]
+---
+# Предупреждение
+.pull-left[
+
+```r
+chisq.test(table(dialogues))
+```
+
+```
+## Warning in stats::chisq.test(x, y, ...): Chi-squared approximation may be
+## incorrect
+```
+
+```
+## 
+## 	Pearson's Chi-squared test with Yates' continuity correction
+## 
+## data:  table(dialogues)
+## X-squared = 0.41461, df = 1, p-value = 0.5196
+```
+]
+
+.pull-right[
+
+```r
+fisher.test(table(dialogues))
+```
+
+```
+## 
+## 	Fisher's Exact Test for Count Data
+## 
+## data:  table(dialogues)
+## p-value = 0.3644
+## alternative hypothesis: true odds ratio is not equal to 1
+## 95 percent confidence interval:
+##    0.297058 192.895373
+## sample estimates:
+## odds ratio 
+##   3.472702
+```
+]
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э. Визуализация данных с помощью ggplot2. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

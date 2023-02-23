@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L5_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Проверка гипотезы
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# Статистический вывод
+
+- Статистический вывод (англ. statistical inference), также называемый индуктивной статистикой (англ. inferential statistics, inductive statistics) — обобщение информации из выборки для получения представления о свойствах генеральной совокупности. 
+
+- Статистический вывод отличается от описательной статистики, которая занимается только описанием и анализом имеющихся данных и не делает выводов о том, как результаты её анализа могут быть перенесены на генеральную совокупность. 
+
+.footnote[
+[Источник: Wikipedia.org](https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%B0%D1%82%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B2%D1%8B%D0%B2%D0%BE%D0%B4)
+]
+
+---
+# Проверка гипотезы
+
+.pull-left[
+
+- **Формулировка нулевой и альтернативной гипотезы**
+
+- Выбор уровня значимости
+
+- Определение подходящего статистического критерия
+
+- Принятие решения на основании данных выборки &lt;/br&gt;
+]
+
+.pull-right[
+`\(H_0: μ_R = μ_L\)` &lt;/br&gt;
+`\(H_1: μ_R \neq μ_L\)`
+]
+
+---
+# Типы ошибок  
+
+&lt;img src="https://www.questionstar.ru/wp-content/uploads/2020/08/%D0%BE%D1%82%D0%B2%D0%B5%D1%80%D0%B3%D0%BD%D1%83%D1%82%D0%B0.png" /&gt;
+
+.footnote[Источник: [Questionstar.ru](https://www.questionstar.ru/uchebnik-kak-provodit-oprosy/analiz-dannix-statisticheskie-metodi/induktivnaya-statistika/proverka-statisticheskix-gipotez)]
+---
+
+# Z-тест (Z-критерий Фишера)
+
+.pull-left[
+## Z-оценка
+&lt;img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/5ceed701c4042bb34618535c9a902ca1a937a351" /&gt;
+
+## Z-статистика
+&lt;img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/4e4de9205e4a5a691bb66d7f3cab0ab7dd47d199" /&gt;
+
+]
+
+.pull-right[
+&lt;img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Normal_distribution_and_scales.gif" /&gt; 
+
+.footnote[
+[Источник: Wikipedia.org](https://ru.wikipedia.org/wiki/Z-%D0%BE%D1%86%D0%B5%D0%BD%D0%BA%D0%B0#/media/%D0%A4%D0%B0%D0%B9%D0%BB:Normal_distribution_and_scales.gif)
+]
+]
+
+
+
+
+
+
+
+---
+
+# `\(μ_R\)` &amp; `\(σ_R\)`  
+
+
+```r
+library(dplyr)
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/SentL.Rdata")
+Rep &lt;- sent.length %&gt;% filter(title == "Republic")
+mu &lt;- mean(Rep$sent.l)
+sigma &lt;- sd(Rep$sent.l)
+mu
+```
+
+```
+## [1] 13.9111
+```
+
+```r
+sigma
+```
+
+```
+## [1] 15.58514
+```
+
+---
+# Z-статистика
+
+
+```r
+Laws &lt;- sent.length %&gt;% filter(title == "Laws")
+set.seed(123)
+Laws.sample &lt;- sample(Laws$sent.l, 1000)
+xbar &lt;- mean(Laws.sample)
+sem &lt;- sigma /sqrt(1000)
+z &lt;- (xbar - mu) / sem
+xbar
+```
+
+```
+## [1] 21.521
+```
+
+```r
+sem
+```
+
+```
+## [1] 0.4928454
+```
+
+```r
+z
+```
+
+```
+## [1] 15.44075
+```
+
+---
+# "Государство" vs. "Законы"
+.pull-left[
+
+```r
+2*pnorm(q=z, lower.tail=FALSE)
+```
+
+```
+## [1] 8.708186e-54
+```
+
+```r
+pnorm(q=z, lower.tail=T)
+```
+
+```
+## [1] 1
+```
+
+```r
+pnorm(q=z, lower.tail=F)
+```
+
+```
+## [1] 4.354093e-54
+```
+]
+
+.pull-right[
+&lt;img src="https://uploads-cdn.omnicalculator.com/images/pvalsym.png?width=850&amp;enlarge=0&amp;format=webp" style="width: 70%"  /&gt;
+]
+
+.footnote[
+Источник: [Omnicalculator.com](https://www.omnicalculator.com/statistics/p-value)
+]
+---
+
+# "Государство" vs. "Хармид"
+
+
+```r
+Chrm &lt;- sent.length %&gt;% filter(title == "Charmides")
+set.seed(123)
+Chrm.sample &lt;- sample(Chrm$sent.l, 100)
+xbar &lt;- mean(Chrm.sample)
+sem &lt;- sigma /sqrt(100)
+z &lt;- (xbar - mu) / sem
+z
+```
+
+```
+## [1] -0.3600206
+```
+
+```r
+2*pnorm(q=z, lower.tail=T)
+```
+
+```
+## [1] 0.7188317
+```
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

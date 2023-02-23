@@ -1,0 +1,250 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Критерий хи-квадрат"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+# Распределение хи-квадрат
+```{r echo=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+data.frame(chisq = 0:7000 / 100) %>% 
+  mutate(df_05 = dchisq(x = chisq, df = 5),
+         df_15 = dchisq(x = chisq, df = 15),
+         df_30 = dchisq(x = chisq, df = 30)) %>%
+  gather(key = "df", value = "density", -chisq) %>%
+  ggplot() +
+  geom_line(aes(x = chisq, y = density, color = df)) +
+  labs(title = "Семейство кривых распределения хи-квадрат") 
+```
+---
+
+```{r echo=FALSE, fig.height=5.5}
+library(sjPlot); dist_chisq(deg.f = 4, p = 0.05)
+```
+---
+# От статистики к вероятности
+```{r}
+pchisq(9.49, 4)
+qchisq(0.95, 4)
+```
+---
+# Критерий согласия: датасет
+```{r echo=FALSE}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/PlatoWords.Rdata")
+```
+
+```{r}
+my_words = c("γε", "μέν", "δέ",	"γάρ", "οὖν")
+section.words.pl <- words.tbl %>% mutate(section = (row_number() %/% 5000)+1) %>% 
+  filter(word %in% my_words) %>% mutate(word = factor(word)) %>%
+  group_by(section, word, .drop = F) %>% count() %>% ungroup()
+pl_sample <- section.words.pl %>% filter(section == 50) %>% select(-section)
+pl_sample
+```
+---
+# Критерий согласия: тест
+```{r}
+chisq.test(pl_sample$n)
+```
+---
+# Под капотом критерия согласия
+.pull-left[
+```{r}
+mu <- mean(pl_sample$n)
+mu
+chis <- c()
+for (i in 1:length(pl_sample$n)) {
+  chi = (pl_sample$n[i] - mu)^2 / mu
+  chis <- c(chis, chi)
+}
+sum(chis)
+1 - pchisq(341.2468, df = 4) 
+```
+]
+
+.pull-right[
+##$$\sum_{i=1}^{n}\frac{(O_i - E_i)^2}{E_i}$$
+]
+---
+# Сравнение двух распределений
+.pull-left[
+```{r echo=F}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/AristotleTidy.Rdata")
+section.words.ar <- Aristotle.tidy %>% mutate(section = (row_number() %/% 5000)+1) %>% 
+  filter(word %in% my_words) %>% mutate(word = factor(word)) %>% 
+  group_by(section, word, .drop = F) %>% count()  %>% ungroup()
+ar_sample <- section.words.ar %>% filter(section == 10) %>% select(-section)
+```
+
+```{r}
+ar_sample
+```
+]
+
+.pull-right[
+```{r}
+pl_sample
+```
+]
+---
+# Таблица сопряженности
+```{r}
+library(janitor)
+pl_sample <- pl_sample %>% mutate(who = "Plato")
+ar_sample <- ar_sample %>% mutate(who = "Aristotle")
+observed <- bind_rows(pl_sample, ar_sample) %>% spread(word, n)
+observed
+observed <-  as.data.frame(observed)
+rownames(observed) <- observed$who
+observed <- observed[, -1] 
+observed
+```
+---
+# Сравнение: тест хи-квадрат
+```{r}
+chisq.test(observed)
+```
+---
+# Под капотом функции
+```{r}
+library(janitor); observed.totals <- bind_rows(pl_sample, ar_sample) %>% 
+  spread(word, n) %>% adorn_totals("row") %>% adorn_totals("col")
+observed.totals
+415/731  ; 107/731
+(415/731)  * (107/731) * 731
+```
+---
+```{r}
+ar.expected <- (415/731) * (observed.totals[3, 2:6]/731) * 731
+pl.expected <- (316/731) * (observed.totals[3, 2:6]/731) * 731
+
+ar.observed <- observed[1, ]
+pl.observed <- observed[2, ]
+
+ar.chi <- ((ar.observed - ar.expected)^2) / ar.expected
+pl.chi <- ((pl.observed - pl.expected)^2) / pl.expected
+
+sum(ar.chi) + sum(pl.chi)
+```
+---
+# Критерий независимости
+```{r echo=FALSE}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/DialogueType.Rdata")
+```
+```{r}
+head(dialogues) ;  dialogues <- dialogues[,-1 ]
+table(dialogues)
+```
+---
+# Тест (без поправки)
+.pull-left[
+```{r}
+chisq.test(table(dialogues), correct = F)
+num <- 25*((5*8 - 11)^2)
+den <-  (5+11)*(1+8)*(5+1)*(11+8)
+num/den
+```
+]
+
+.pull-right[
+```{r}
+table(dialogues)
+```
+$$\frac{N(AD-BC)^2}{(A+B)(C+D)(A+C)(B+D)}$$
+]
+---
+# Тест (с поправкой)
+.pull-left[
+```{r}
+chisq.test(table(dialogues), correct = T)
+num <- 25*((abs(5*8 - 11) - 25/2)^2)
+den <-  (5+11)*(1+8)*(5+1)*(11+8)
+num/den
+```
+]
+
+.pull-right[
+```{r}
+table(dialogues)
+```
+
+
+$$\frac{N(|AD-BC| - N/2)^2}{(A+B)(C+D)(A+C)(B+D)}$$
+]
+---
+# Предупреждение
+.pull-left[
+```{r warning=TRUE}
+chisq.test(table(dialogues))
+```
+]
+
+.pull-right[
+```{r}
+fisher.test(table(dialogues))
+```
+]
+
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э. Визуализация данных с помощью ggplot2. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).

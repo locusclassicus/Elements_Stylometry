@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L10_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## Оценка мощности
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# Оценка мощности
+- ошибка первого типа (α): отвергнута верная нулевая гипотеза
+
+- ошибка второго типа (β): не отвергнута ложная нулева гипотеза
+
+- мощность = 1-β
+
+- оценка мощности: насколько вероятно, что статистически значимая разница будет обнаружена с данным объемом выборки при истинной альтернативной гипотезе?
+---
+# Анализ мощности
+
+-  величина ожидаемого эффекта 
+
+- число выполненных измерений (необходимо выяснить)
+
+- величина уровня значимости (α)
+
+- мощность критерия
+---
+# Величина эффекта и размер выборки
+
+```r
+library(pwr)
+pwr.t.test(d = .2,
+           sig.level = 0.05,
+           power = 0.8)
+```
+
+```
+## 
+##      Two-sample t test power calculation 
+## 
+##               n = 393.4057
+##               d = 0.2
+##       sig.level = 0.05
+##           power = 0.8
+##     alternative = two.sided
+## 
+## NOTE: n is number in *each* group
+```
+---
+# Величина эффекта и размер выборки
+
+```r
+library(pwr)
+pwr.t.test(d = .5,
+           sig.level = 0.05,
+           power = 0.8)
+```
+
+```
+## 
+##      Two-sample t test power calculation 
+## 
+##               n = 63.76561
+##               d = 0.5
+##       sig.level = 0.05
+##           power = 0.8
+##     alternative = two.sided
+## 
+## NOTE: n is number in *each* group
+```
+---
+# Частотность артикля
+
+```
+## # A tibble: 5 × 2
+##       n author   
+##   &lt;int&gt; &lt;chr&gt;    
+## 1    12 Aristotle
+## 2    19 Aristotle
+## 3    14 Aristotle
+## 4    11 Aristotle
+## 5    16 Aristotle
+```
+
+```
+## # A tibble: 5 × 2
+##       n author
+##   &lt;int&gt; &lt;chr&gt; 
+## 1     8 Plato 
+## 2    14 Plato 
+## 3    14 Plato 
+## 4     6 Plato 
+## 5     6 Plato
+```
+---
+# Двухвыборочный тест
+
+```r
+t.test(sample.ar$n, sample.pl$n)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  sample.ar$n and sample.pl$n
+## t = 2.0618, df = 7.5648, p-value = 0.07517
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -0.6228213 10.2228213
+## sample estimates:
+## mean of x mean of y 
+##      14.4       9.6
+```
+---
+# Узнать размер эффекта
+.pull-left[
+
+```r
+library(lsr)
+both_groups &lt;- bind_rows(sample.ar, sample.pl)
+d &lt;- cohensD(n ~ author,
+        data = both_groups)
+d
+```
+
+```
+## [1] 1.303982
+```
+
+```r
+num &lt;- mean(sample.ar$n) - mean(sample.pl$n) 
+den &lt;- sqrt((sd(sample.ar$n)^2 + 
+               sd(sample.pl$n)^2)/2) 
+## pooled sd
+num/den 
+```
+
+```
+## [1] 1.303982
+```
+]
+
+.pull-right[
+&lt;img src="https://www.researchgate.net/publication/265214204/figure/fig1/AS:202946290688000@1425397574752/d-Cohens-d-effect-size-X1-and-X2-means-of-the-two-groups-s1-and-s2-standard_W640.jpg" /&gt; 
+
+]
+---
+# Подставляем данные...
+
+```r
+pwr.t.test(n = 5, sig.level = 0.05, d = d)
+```
+
+```
+## 
+##      Two-sample t test power calculation 
+## 
+##               n = 5
+##               d = 1.303982
+##       sig.level = 0.05
+##           power = 0.442194
+##     alternative = two.sided
+## 
+## NOTE: n is number in *each* group
+```
+---
+# Какая нужна выборка?
+
+```r
+pwr.t.test(power = 0.8, sig.level = 0.05, d = d)
+```
+
+```
+## 
+##      Two-sample t test power calculation 
+## 
+##               n = 10.28692
+##               d = 1.303982
+##       sig.level = 0.05
+##           power = 0.8
+##     alternative = two.sided
+## 
+## NOTE: n is number in *each* group
+```
+---
+# Таблица сопряженности
+
+```
+##           protag
+## type       Other Socrates
+##   direct       5       11
+##   narrated     1        8
+```
+---
+# Тест хи-квадрат
+
+```r
+chisq.test(mx, correct = F)
+```
+
+```
+## 
+## 	Pearson's Chi-squared test
+## 
+## data:  mx
+## X-squared = 1.2808, df = 1, p-value = 0.2578
+```
+---
+# Наблюдаемые вероятности
+
+```r
+res &lt;- chisq.test(mx, correct = F)
+obs &lt;- res$observed / (5+11+1+8)
+obs
+```
+
+```
+##           protag
+## type       Other Socrates
+##   direct    0.20     0.44
+##   narrated  0.04     0.32
+```
+---
+# Величина эффекта
+
+```r
+ES.w2(obs)
+```
+
+```
+## [1] 0.2263416
+```
+
+```r
+cohen.ES(test = "chisq", size = "small")
+```
+
+```
+## 
+##      Conventional effect size from Cohen (1982) 
+## 
+##            test = chisq
+##            size = small
+##     effect.size = 0.1
+```
+
+```r
+cohen.ES(test = "chisq", size = "medium")
+```
+
+```
+## 
+##      Conventional effect size from Cohen (1982) 
+## 
+##            test = chisq
+##            size = medium
+##     effect.size = 0.3
+```
+---
+# Оценка мощности
+
+```r
+pwr.chisq.test(w=ES.w2(obs), df=1, N = 25)
+```
+
+```
+## 
+##      Chi squared power calculation 
+## 
+##               w = 0.2263416
+##               N = 25
+##              df = 1
+##       sig.level = 0.05
+##           power = 0.2047579
+## 
+## NOTE: N is the number of observations
+```
+---
+# Сколько наблюдений нам нужно?
+
+```r
+pwr.chi &lt;- pwr.chisq.test(w=ES.w2(obs), df=1, power = 0.8)
+plot(pwr.chi)
+```
+
+&lt;img src="M3L10_Slides_files/figure-html/unnamed-chunk-13-1.png" width="100%" /&gt;
+
+---
+# Литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Cohen J. Statistical Power Analysis for the Behavioral Sciences. 2nd ed. New York, 1988. 
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

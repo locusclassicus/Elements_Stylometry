@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>R для антиковедов   Модуль 3</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ольга Алиева" />
+    <script src="M3L9_Slides_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R для антиковедов <br/> Модуль 3
+## F-критерий Фишера
+### Ольга Алиева
+
+---
+
+
+
+
+
+
+---
+# F-критерий Фишера
+
+.pull-left[
+#$$H_0: \sigma_1^2 = \sigma_2^2$$
+#$$H_a: \sigma_1^2 \neq \sigma_2^2$$
+]
+
+.pull-right[
+
+#$$F = \frac{s_1^2}{s_2^2}$$
+
+]
+---
+# Уровень значимости
+
+```r
+library(sjPlot)
+dist_f(deg.f1 = 6, deg.f2 = 45, p= 0.05)
+```
+
+&lt;img src="M3L9_Slides_files/figure-html/unnamed-chunk-1-1.png" width="100%" /&gt;
+---
+# Семейство F-распределений
+&lt;img src="M3L9_Slides_files/figure-html/unnamed-chunk-2-1.png" width="100%" /&gt;
+---
+# Расчет статистики
+
+```r
+set.seed(12)
+x &lt;- rnorm(10)
+y &lt;- rnorm(12)
+var.test(x, y)
+```
+
+```
+## 
+## 	F test to compare two variances
+## 
+## data:  x and y
+## F = 1.178, num df = 9, denom df = 11, p-value = 0.7845
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.3283388 4.6086054
+## sample estimates:
+## ratio of variances 
+##           1.178046
+```
+---
+# Расчет статистики
+
+```r
+set.seed(12)
+x &lt;- rnorm(10, sd = 1)
+y &lt;- rnorm(12, sd = 3)
+var.test(x, y)
+```
+
+```
+## 
+## 	F test to compare two variances
+## 
+## data:  x and y
+## F = 0.13089, num df = 9, denom df = 11, p-value = 0.004988
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.03648209 0.51206726
+## sample estimates:
+## ratio of variances 
+##           0.130894
+```
+---
+
+
+```r
+var.test(x, y)
+```
+
+```
+## 
+## 	F test to compare two variances
+## 
+## data:  x and y
+## F = 0.13089, num df = 9, denom df = 11, p-value = 0.004988
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.03648209 0.51206726
+## sample estimates:
+## ratio of variances 
+##           0.130894
+```
+
+```r
+var(x)/var(y)
+```
+
+```
+## [1] 0.130894
+```
+---
+
+```r
+statistic &lt;- var(x)/var(y)
+pval &lt;- pf(statistic, df1=9, df2=11)
+pval &lt;- 2 * min(pval, 1 - pval)
+pval
+```
+
+```
+## [1] 0.004988194
+```
+
+```r
+var.test(x, y)
+```
+
+```
+## 
+## 	F test to compare two variances
+## 
+## data:  x and y
+## F = 0.13089, num df = 9, denom df = 11, p-value = 0.004988
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  0.03648209 0.51206726
+## sample estimates:
+## ratio of variances 
+##           0.130894
+```
+---
+
+
+```r
+x &lt;- rnorm(100); error = rnorm(100); y &lt;- 2 * x + 3 + error
+my_lm &lt;- lm(y ~ x)
+summary(my_lm)
+```
+
+```
+## 
+## Call:
+## lm(formula = y ~ x)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.79495 -0.74526  0.01914  0.80616  2.18570 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   2.9569     0.1048   28.21   &lt;2e-16 ***
+## x             1.9230     0.1237   15.55   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.046 on 98 degrees of freedom
+## Multiple R-squared:  0.7116,	Adjusted R-squared:  0.7087 
+## F-statistic: 241.8 on 1 and 98 DF,  p-value: &lt; 2.2e-16
+```
+---
+# Источники и литература:
+
+- Бослаф С. Статистика для всех. Москва, 2017.
+
+- Мастицкий С.Э, Шитиков В.К. Статистический анализ и визуализация данных с помощью R. Москва, 2015.
+
+- Резник А.Д., Резник Д.А. Элементарное введение в статистику: от практики к теории. Москва, 2020. 
+
+- Baayen R.H. Analyzing Linguistic Data: A Practical Introduction to Statistics using R. CUP, 2008.
+
+- Desagulier G. Corpus Linguistics and Statistics with R. Springer, 2017.
+
+- Gries S. Th. Statistic for Linguistics with R: A Practical Introduction. De Gruyter, 2013.
+
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)&lt;br&gt;
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

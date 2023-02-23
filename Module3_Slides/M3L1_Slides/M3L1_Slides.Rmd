@@ -1,0 +1,192 @@
+---
+title: "R для антиковедов <br/> Модуль 3 "
+subtitle: "Меры центральной тенденции <br/> Меры изменчивости"  
+author: 
+  - "Ольга Алиева"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	fig.height = 3.5,
+	fig.retina = 3,
+	fig.width = 9,
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	hiline = TRUE,
+	out.width = "100%"
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_light(
+)
+```
+
+---
+class: inverse center middle
+
+# Меры центральной тенденции
+## Мода, медиана, среднее
+
+---
+# Мода
+
+```{r echo=FALSE}
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/SentL.Rdata")
+library(ggplot2)
+library(dplyr)
+```
+```{r plot}
+sent.length %>% ggplot(aes(x = sent.l)) + geom_histogram(fill = "lightblue", binwidth = 5) +
+  labs(title = "Распределение длины предложений в Платоновском корпусе (Diorisis)")
+```
+
+---
+# Наиболее частое значение
+```{r}
+sent.length %>% count(sent.l, sort = TRUE)
+```
+
+---
+# Бимодальное распределение
+.pull-left[
+![Bimodal distribution](https://miro.medium.com/max/1120/1*cxeqxH1_zb68td7toVvFQQ.png)
+
+.footnote[Источник: [Medium.com](https://medium.com/precarious-physicist/teaching-a-class-with-a-bimodal-distribution-if-you-have-one-c9629ac15469)
+]]
+---
+# Медиана
+```{r}
+sent.length %>% ggplot(aes(x = sent.l)) + geom_histogram(fill = "lightblue", binwidth = 5) +
+  geom_vline(aes(xintercept=median(sent.l)), color = "purple")
+```
+
+---
+# Диаграмма размаха
+```{r}
+my_dial <- c("Sophist", "Timaeus")
+sent.length %>% filter(title %in% my_dial) %>% ggplot(aes(x = title, y = sent.l,                                                    fill = title)) + 
+  geom_boxplot(alpha = 0.3)
+```
+---
+# Анатомия диаграммы размаха
+
+<img src="https://miro.medium.com/max/1400/1*2c21SkzJMf3frPXPAR_gZA.png" style="width: 90%" />
+
+.pull-right[
+.footnote[Источник: [Towardsdatascience.com](https://towardsdatascience.com/understanding-boxplots-5e2df7bcbd51)
+]]
+---
+# Квантили 
+```{r}
+Tim <- sent.length %>% filter(title == "Timaeus") 
+median(Tim$sent.l) 
+quantile(Tim$sent.l)
+quantile(Tim$sent.l, seq(0, 1, 0.1))
+IQR(Tim$sent.l)
+```
+
+---
+
+# Среднее
+```{r}
+sent.length %>% ggplot(aes(x = sent.l)) + geom_histogram(fill = "lightblue", binwidth = 5) +
+  geom_vline(aes(xintercept=median(sent.l)), color = "purple") + 
+  geom_vline(aes(xintercept=mean(sent.l)), color = "magenta")
+```
+
+---
+class: inverse center middle
+
+# Меры изменчивости
+## Размах, дисперсия, ст. отклонение
+
+---
+# Дисперсия
+```{r}
+sl <- sent.length$sent.l
+var(sl)
+sum((sl - mean(sl))^2) / (length(sl)-1) 
+```
+.pull-left[
+![Variance](https://miro.medium.com/max/716/1*51Bri-1mUHRWhKQx4m-RgQ.png)]
+
+.pull-right[
+.footnote[Источник: [Medium.com](https://medium.com/@mohan-gupta/understanding-variance-and-why-do-we-divide-by-n-1-58950c0953a4)
+]]
+
+---
+# Стандартное отклонение
+```{r}
+sqrt(var(sl))
+sd(sl) 
+```
+---
+
+# От выборки к популяции 
+
+<img src="https://www.researchgate.net/profile/Pranab-Chatterjee/publication/262377157/figure/tbl1/AS:614149746851876@1523436118934/Symbols-of-Population-Parameter-and-their-Corresponding-Sample-Statistic.png" style="width: 80%" />
+
+.footnote[Источник: [Researchgate.net](https://www.researchgate.net/figure/Symbols-of-Population-Parameter-and-their-Corresponding-Sample-Statistic_tbl1_262377157)
+]
+---
+
+# Оценка параметров популяции
+
+```{r}
+sample.means <- function(x) {
+  my_means <- c()
+  for(i in 1:x) {
+    my_sample <- sent.length %>% sample_n(2000, replace = TRUE)
+    my_mean <- mean(my_sample$sent.l)
+    my_means <- c(my_means, my_mean)
+  }
+  hist(my_means)
+  abline(v = mean(my_means), col = "red", lwd = 3)
+  abline(v = mean(sent.length$sent.l), col = "blue", lwd =3)
+}
+```
+
+---
+# Выборка = 10
+```{r}
+set.seed(1)
+sample.means(10)
+```
+---
+
+# Выборка = 100
+```{r}
+set.seed(1)
+sample.means(100)
+```
+---
+
+# Выборка = 1000
+```{r}
+set.seed(1)
+sample.means(1000)
+```
+---
+
+class: center, middle
+
+# Спасибо за внимание!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
