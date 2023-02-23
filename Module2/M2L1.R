@@ -1,68 +1,63 @@
-## M2L1 models for lexical richness (based on Baayen & Savoy)
-## before this lesson, one needs to know confidence intervals
-## load packages
-library(languageR)
-library(stylo)
+## visualize word frequencies for content words in Augustine book-wise
+## with ggplot and make a word-cloud
 
-## load text
-Laws <- load.corpus.and.parse(file = "Laws.txt", corpus.dir = getwd(), markup.type= "plain", 
-corpus.lang = "Other", sampling = "no.sampling", encoding = "UTF-8")
+## in Lesson 8 Module 1, we made a df with Augustine's Confessions
+## let's load it now
+load("/Users/olga/R_Workflow/Elements_Stylometry/data/ConfessionsDF.Rdata")
 
-## analyze growth rate
-laws.growth <- growth.fnc(text = Laws[[1]], size = 1000, nchunks = 103)
-laws.g <- laws.growth@data$data
-head(laws.g)
-plot(laws.growth)
+## get rid of rownames
+rownames(df) <- c()
 
-## compare two chunks of unequal size
-laws1 = Laws[[1]][1:10000]
-laws2 = Laws[[1]][10001:30000]
-compare.richness.fnc(laws1, laws2)
+##  split text
+library(dplyr)
+library(tidytext)
+conf.books <- df %>% unnest_tokens(word, text)
 
-## the difference is not significant if chunks are of equal length
-laws1 = Laws[[1]][1:10000]
-laws2 = Laws[[1]][10001:20000]
-compare.richness.fnc(laws1, laws2)
+## load stopwords
+library(stopwords)
+stop = stopwords("la", source = "ancient")
+stop.tbl <- as_tibble(stop)
+colnames(stop.tbl) <- "word"
 
-## so why don't we compare texts of a fixed size? 
-## Savoy p. 27: resulting TTR values will not be the same! 
-## let us take 50  normal 5000-word samples from the Laws
+## delete stopwords
+conf.content <- conf.books %>% anti_join(stop.tbl)
 
-my_samples <- make.samples(Laws[[1]], sample.size = 5000, 
-                           sampling = "normal.sampling")
+## count all
+conf.count.all <- conf.content %>% count(word, sort = T)
 
-## we know the number of tokens in each sample, so what we need is a number of "types"
-## this is easily done with
-length(table(my_samples[[1]]))
-## or 
-length(make.frequency.list(my_samples[[1]]))
+## plot all
+library(ggplot2)
+conf.count.all %>% filter(n > 49) %>% 
+    ggplot(aes(word, n)) + geom_col() + xlab(NULL) + coord_flip()
 
-## calculate ttr for specific samples
-ttr.samples <- c()
-tokens = 5000
-for(i in 1:length(my_samples)){
-  types <- length(table(my_samples[[i]]))
-  tt <- types/tokens
-  ttr <- c(ttr, tt)
-}
+## same for each book
+conf.count.book <- conf.content %>% group_by(b.nr) %>% 
+  count(word, sort = T) 
 
-## general ttr 
-types.gen <- length(table(Laws[[1]]))
-tokens.gen <- length(Laws[[1]])
-ttr.gen <- types.gen/tokens.gen
+conf.filtered <- conf.count.book %>%
+  filter(b.nr %in% c("1", "2", "11", "12")) %>% 
+  mutate(b.nr = factor(b.nr, levels = c("1", "2", "11", "12"))) 
 
-## ttr from growth object
-laws.growth <- growth.fnc(text = Laws[[1]], size = 5000, nchunks = 20)
-ttr.growth <- laws.growth@data$data$TypeTokenRatio
+conf.sliced <- conf.filtered %>% arrange(desc(n), .by_group = T ) %>%
+  slice_head(n = 10) %>% rename(book = b.nr)
+## some tips https://www.qiushiyan.dev/post/reorder-varible-within-facets/
 
-## plot
-par(mfrow = c(1,1))
-plot(ttr, type = "b", ylim = c(0.05, 0.25), col = "darkblue")
-abline(h = ttr.gen, col = "darkred", lty = 2)
-lines(ttr.growth, col = "purple", lty = 2)
+p <- ggplot(data = conf.sliced, aes(x = reorder_within(word, n, book), 
+                                    y = n, fill = book)) 
 
-## add confidence intervals
-
-## sum up with some notes on Campbell 
+p +  geom_col() +  coord_flip() + scale_x_reordered() +
+  facet_wrap(facets = ~book, nrow = 2, scales = "free") + 
+  labs(title = "Confessions: Word Frequencies by Books",
+       y = "nr. of words",
+       x = NULL)
 
 
+## wordcloud
+library(wordcloud)
+wordcloud(words = conf.count.all$word, freq = conf.count.all$n, 
+          min.freq = 50, max.words = 100, random.order = TRUE, 
+          rot.per = .15, vfont=c("script","plain"))
+
+wordcloud(words = conf.count.all$word, freq = conf.count.all$n, 
+          min.freq = 50, max.words = 100, random.order = TRUE, 
+          rot.per = .15, vfont=c("serif","plain"))

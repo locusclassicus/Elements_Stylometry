@@ -1,26 +1,46 @@
-## lexical density, see Savoy p. 30
-## POS counts needed! 
+## counting tf and tf-idf 
+## in Lesson 10 Module 1, we also downloaded and parsed 
+## the whole Corpus Aristotelicum
 
-library(XML)
-filenames <-  "Apology.xml"
+## so we read in using tidy tools
+list_of_files <- list.files(path = "./Aristotle", recursive = TRUE,
+                            pattern = "\\.txt$", 
+                            full.names = TRUE)
+library(vroom)
+Aristotle.df <- vroom(list_of_files, id = "FileName", delim = "\n", 
+                      col_names = F)
+## clean up id's 
+library(stringr)
+Aristotle.df$FileName <- str_remove_all(Aristotle.df$FileName, "./Aristotle/")
+Aristotle.df$FileName <- str_remove_all(Aristotle.df$FileName, ".txt")
+Aristotle.tidy <- Aristotle.df %>% separate(FileName, c("author", "book"), sep = "_")
+Aristotle.tidy <- rename(Aristotle.tidy, word = X1)
+save(Aristotle.tidy, file = "./data/AristotleTidy.Rdata")
 
-## mean sent. length and POS 
+## term frequency
+Aristotle.words <- Aristotle.tidy %>% count(book, word, sort = TRUE) %>% filter(word != "NULL")
 
-url = paste("./", filenames, sep = "")
-doc <- xmlTreeParse(url, useInternalNodes = TRUE, isURL = F)
-rootnode  <- xmlRoot(doc)
-  
-POS <- xpathSApply(rootnode, "//TEI.2/text/body/sentence/word/lemma", xmlGetAttr, 'POS')
-POS <- unlist(POS)
-POS.df <- as.data.frame(table(POS))
-tokens <- sum(POS.df$Freq)
+## total words 
+total_words <- Aristotle.words %>% group_by(book) %>% summarize(total = sum(n))
 
-## subset functional and content-bearing words
-content <- c("noun", "adjective", "verb", "adverb")
-Content.df <- POS.df[POS.df$POS %in% content, ]
-sum.content <- sum(Content.df$Freq)
+## bind
+Aristotle.words <- left_join(Aristotle.words, total_words)
 
-LD <- sum.content/tokens
-## the LD seems a bit too high, but that is because of tagging (see file)
+## plot
+library(ggplot2)
+ggplot(Aristotle.words, aes(n/total, fill = book)) + 
+  geom_histogram(show.legend = F) + xlim(NA, 0.0009) +  
+  facet_wrap(~book, ncol=2, scales = "free_y")
 
+## tf_idf
+Aristotle.words <- Aristotle.words %>% bind_tf_idf(word, book, n)
+## save it for the next lesson
+save(Aristotle.words, file = "./data/AristotleTF_IDF.Rdata")
 
+## plot tf-idf
+Aristotle.words %>% select(-total) %>% arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>%
+  group_by(book) %>% top_n(15) %>% ungroup() %>%
+  ggplot(aes(word, tf_idf, fill = book)) +
+  geom_col(show.legend = F) + labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~book, ncol = 2, scales = "free") + coord_flip()
